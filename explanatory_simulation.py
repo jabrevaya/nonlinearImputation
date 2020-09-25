@@ -23,16 +23,29 @@ import time
 #   SIMULATION PARAMETERS   #
 #############################
 
+# True values
 alpha = 1
 beta = [0.5, -2]
+
+# Initial values
 a0 = 0
 b0 = [0, 0]
-reps = 10
-nlist = [100]
+
+# Replication number, sample sizes
+reps = 150
+nlist = [1000, 4000, 16000]
+
+# File names (fname is req'd, stores the aggregate results, resultsFname
+# can be set to False)
 fname = 'proba.txt'
 resultsFname = None
+
+# Random seed (not implemented), noisiness (should be True only for dev)
 seed = 2433523
-noise = True
+noise = False
+
+# Fineness of grid; bwidth is locked in with a 1/3 rate
+gridno = 500
 
 
 #################
@@ -133,15 +146,11 @@ def probXCondlZ(xx, zz, xVals, zs, bwidth):
     and returns the kernel estimates for P[X=x|Z=z] for every x in xVals
     and z in zs as an n-by-xVals.shape[1] array.
     """
-#    len(zz)
-#    bwidth= (0.05, 0.05)
-#    zs = np.hstack((z, m))
     if zz.shape[1] > 1:
         zz = np.stack([zz[:, 1:]] * zs.shape[0])
         zis = np.stack([zs[:, 1:-1]] * zz.shape[1])
     elif zz == np.ones(zz.shape):
         return np.mean(xx)
-#    xVals = xGrid[0, :]
     xVals = np.stack([xVals] * zz.shape[1])
     kernel1 = np.prod(normal.pdf((zz - np.einsum('ijk->jik', zis))
                                  / bwidth[0]), axis=-1)
@@ -173,11 +182,6 @@ def yCondlOnMarginalZs(coeffs, probsvector, x, z, gridno):
                             axis=1, keepdims=True))
     return np.hstack(tuple([np.sum(prob * expectedYs, axis=1, keepdims=True)
                             for prob in probsvector]))
-
-
-# coeffs = [1, 0.5, -2]
-# imputeMoments(coeffs, y, x, z, m, gridno, bwidth1)
-# bwidth = bwidth1
 
 
 def imputeMoments(coeffs, probs, y, x, z, m, gridno):
@@ -217,7 +221,7 @@ def gmmImpute(y, x, z, m, a0, b0, gridno, bwidth, noise=False):
     # optimization
     optimum = opt.minimize(
             imputeMoments, coeffs0, args=(probs, y, x, z, m, gridno),
-            method='BFGS', options={'disp': True})
+            method='BFGS', options={'disp': noise})
     if noise:
         print(optimum.message)
     return optimum.x
@@ -264,11 +268,11 @@ def montecarlo(oldfuggveny):
     def iterations(*args):
         for n in nlist:
             t0 = time.time()
-            results = [oldfuggveny(n, *args) for i in range(reps)]
+            results = np.stack([oldfuggveny(n, *args) for i in range(reps)])
 
-            # THIS NEEDS TO BE CHANGED (only)
-            meanlist = [0, 1, 2]
-            stdlist = [2, 3, 5]
+            # THIS NEEDS TO BE CHANGED (only), add name if you would like to!
+            meanlist = np.mean(results, axis=0)
+            stdlist = np.std(results, axis=0)
 
             if resultsFname:
                 with open(resultsFname, 'a') as f:
@@ -297,29 +301,25 @@ def iteration(n, noise=False):
     AD imputation GMM, marginalized imputation GMM)
     Returns a numpy array.
     """
-    n = 1000
-    gridno = 500
-    bwidth1 = [0.1, 0.1]
-    bwidth2 = [0.1, 0.1]
+    bwidth1 = [2.154 * n**(-1/3), 1.077 * n**(-1/3)]
+    # bwidth2 = [0.1, 0.1]
     y, x, z, m = dgp(alpha, beta, n, noise)
     fullDataRes = gmmFullData(y, x, z, a0, b0, noise)
     nonMissingDataRes = gmmNonMissingData(y, x, z, m, a0, b0, noise)
-    print(fullDataRes, nonMissingDataRes)
     imputeRes = gmmImpute(y, x, z, m, a0, b0, gridno, bwidth1, noise)
-    print(imputeRes)
-    marginalizedImputeRes = gmmMarginalizedImpute(y, x, z, m, a0, b0, gridno,
-                                                  bwidth2, noise)
-    print(imputeRes, marginalizedImputeRes)
-    return np.array((fullDataRes, nonMissingDataRes, imputeRes,
-                    marginalizedImputeRes))
+    # marginalizedImputeRes = gmmMarginalizedImpute(y, x, z, m, a0, b0, gridno,
+    #                                              bwidth2, noise)
+    return np.array((fullDataRes, nonMissingDataRes, imputeRes))
+# , marginalizedImputeRes))
 
 
 ###################
 #    SIMULATION   #
 ###################
 
-# with open(fname, 'w') as f:
-#    f.write('beta= ' + str(beta) + '\nalpha= ' + str(alpha) + '\nseed= '
-#            + str(seed) + '\nreps= ' + str(reps) + '\n')
+with open(fname, 'w') as f:
+    f.write('beta= ' + str(beta) + '\nalpha= ' + str(alpha) + '\nseed= '
+            + str(seed) + '\nreps= ' + str(reps) + '\n')
 
-# iteration()
+iteration()
+print('\a')
