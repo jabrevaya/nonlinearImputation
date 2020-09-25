@@ -109,6 +109,12 @@ def dgp(alpha, beta, n, noise=False):
 
 
 def fullDataMoments(coeffs, y, x, z):
+    """Creates the objective function for the estimator that assumes that the
+    full dat set is available without missing values.
+    Its arguments are the coefficient values 'coeffs' (k+1 numpy array) and
+    the data y, x, z in separate 2D arrays. Returns the value of the GMM
+    objective function as a float.
+    """
     indices = y-normal.cdf(x * coeffs[0] + np.sum(z * coeffs[1:],
                            axis=1, keepdims=True))
     moments = np.matrix(np.mean(np.hstack((x * indices, z * indices)), axis=0))
@@ -116,6 +122,16 @@ def fullDataMoments(coeffs, y, x, z):
 
 
 def gmmFullData(y, x, z, a0, b0, noise=False):
+    """ The infeasible GMM estimator that is applied for the full data set
+    pretending the missing x values are there.
+    Arguments:
+    - y, x, z: variables from the data as (n-by-1, n-by-1, n-by-k+1) 2D arrays
+    - a0, b0: the initial values for maximization (1D arrays) - the dimensions
+              must agree with the number of columns in x and z
+    - noise: boolean, set it to True if want to print the messages of the
+             optimizer (automatically suppressed when iteration() is run with
+             the MC decorator)
+    """
     a0 = np.array(a0, ndmin=1)
     b0 = np.array(b0)
     coeffs0 = np.concatenate((a0, b0))
@@ -127,6 +143,18 @@ def gmmFullData(y, x, z, a0, b0, noise=False):
 
 
 def gmmNonMissingData(y, x, z, m, a0, b0, noise=False):
+    """ The feasible GMM estimator that uses the same moments as the infeasible
+    estimator gmmFullData, but is only applied for the part of the data set that
+    is fully observed (non-missing x values, when m=0).
+    Arguments:
+    - y, x, z: variables from the data as (n-by-1, n-by-1, n-by-k+1) 2D arrays
+    - m: missingness indicator, another 2D array (n-by-1)
+    - a0, b0: the initial values for maximization (1D arrays) - the dimensions
+              must agree with the number of columns in x and z
+    - noise: boolean, set it to True if want to print the messages of the
+             optimizer (automatically suppressed when iteration() is run with
+             the MC decorator)
+    """
     a0 = np.array(a0, ndmin=1)
     b0 = np.array(b0)
     coeffs0 = np.concatenate((a0, b0))
@@ -141,10 +169,12 @@ def gmmNonMissingData(y, x, z, m, a0, b0, noise=False):
 
 
 def probXCondlZ(xx, zz, xVals, zs, bwidth):
-    """ Takes xx and zz the nonmissing part of the sample, gridvalus from xVals
-    and an n-by-k+1 array of (z, m) values (2D array) from the data set,
+    """ Takes xx and zz the non-missing part of the sample, grid values from
+    xVals and an n-by-k+1 array of (z, m) values (2D array) from the data set,
     and returns the kernel estimates for P[X=x|Z=z] for every x in xVals
-    and z in zs as an n-by-xVals.shape[1] array.
+    and z in zs as an n-by-xVals.shape[1] array. bwidth (list of 2 floats)
+    contains the bandwidths to calculate the Nadaraya-Watson estimator for the
+    conditional probabilities.
     """
     if zz.shape[1] > 1:
         zz = np.stack([zz[:, 1:]] * zs.shape[0])
@@ -163,6 +193,17 @@ def probXCondlZ(xx, zz, xVals, zs, bwidth):
 def yCondlOnZ(coeffs, probs, x, z, gridno):
     """ This is a not-so-dumb, but still very basic grid implementation of
     numerical integration for our simulation.
+    Arguments:
+    - coeffs: the coefficients 1D array at which you would like to evaluate the
+              integral (and hence the objective function)
+    - probs: conditional probabilities for P[X=xgridval|Z=z] for some xgridvals
+             from a grid of X values generated linearly based on gridno
+    - x: we need its length technically in the function, but it is completely
+         useless here, the data from the full data set for x (2D array)
+    - z: variable z from the data (both the missing and non-missing part,
+         2D array)
+    - gridno: number of grid points on the support of X (fineness of the grid
+              for numerical integration)
     """
     # grid: make it a n-by-gridno array
     xGrid = np.stack([np.linspace(start=-2, stop=2, num=gridno)] * len(x))
@@ -185,6 +226,20 @@ def yCondlOnMarginalZs(coeffs, probsvector, x, z, gridno):
 
 
 def imputeMoments(coeffs, probs, y, x, z, m, gridno):
+    """The objective function for the imputation estimator that uses the
+    analogue of the AD 2017 moments in addition to the feasible moments in
+    gmmNonMissingData.
+    Its arguments are
+    - coeffs: (k+1 numpy array) the coefficient values
+    - probs: conditional probabilities for P[X=xgridval|Z=z] for some xgridvals
+             from a grid of X values generated linearly based on gridno (array)
+    - y, x, z: the data in separate arrays (n-by-1, n-by-1, n-by-k shapes)
+    - m: missingness indicator as 2D array
+    - gridno: number of grid points on the support of X (fineness of the grid
+              for numerical integration)
+
+    Returns the value of the GMM objective function as a float.
+    """
     residuals1 = (1 - m) * (y-normal.cdf(x * coeffs[0]
                                          + np.sum(z * coeffs[1:],
                                                   axis=1, keepdims=True)))
@@ -209,6 +264,23 @@ def marginalizedImputeMoments(coeffs, probsvector, y, x, z, m, gridno):
 
 
 def gmmImpute(y, x, z, m, a0, b0, gridno, bwidth, noise=False):
+    """ The feasible GMM estimator that adds the analogues of the AD 2017
+    moments to the moments of the gmmNonMissingData estimator.
+    Arguments:
+    - y, x, z: variables from the data as (n-by-1, n-by-1, n-by-k+1) 2D arrays
+    - m: missingness indicator, another 2D array (n-by-1)
+    - a0, b0: the initial values for maximization (1D arrays) - the dimensions
+              must agree with the number of columns in x and z
+    - gridno: (integer) number of grid points on the support of X (fineness of the grid
+              for numerical integration)
+    - bwidth: a list-like of two floats, where the first number is the (equal)
+              bwidth for the kernels for the Z dimensions, and the second one
+              is the bandwidth for the normal kernel for the pdf estimator for
+              the X
+    - noise: boolean, set it to True if want to print the messages of the
+             optimizer (automatically suppressed when iteration() is run with
+             the MC decorator)
+    """
     # initializing variables
     a0 = np.array(a0, ndmin=1)
     b0 = np.array(b0)
@@ -264,6 +336,10 @@ def montecarlo(oldfuggveny):
                     to be printed
 
     EVERY TIME YOU RECYCLE, FILL IN THE 'meanlist' and 'stdlist' lines !!!
+    You may also want to add names of estimators to print into the file if
+    there are too many to compare.
+
+    NOTE: REORGANIZE estimation parameter printing too.
      """
     def iterations(*args):
         for n in nlist:
