@@ -16,6 +16,7 @@ NOTES:
 
 import numpy as np
 from scipy import optimize as opt
+from scipy import linalg
 from scipy.stats import norm as normal
 import time
 
@@ -104,12 +105,11 @@ def dgp(alpha, beta, n, noise=False):
     if noise:
         print('Missingness rate: ', np.mean(m))
         print('Mean of y:', np.mean(y))
-
     return y, x, z, m
 
 
-def fullDataMoments(coeffs, y, x, z):
-    """Creates the objective function for the estimator that assumes that the
+def fullDataMoments(coeffs, y, x, z, weight=None):
+    """ Creates the objective function for the estimator that assumes that the
     full dat set is available without missing values.
     Its arguments are the coefficient values 'coeffs' (k+1 numpy array) and
     the data y, x, z in separate 2D arrays. Returns the value of the GMM
@@ -118,10 +118,22 @@ def fullDataMoments(coeffs, y, x, z):
     indices = y-normal.cdf(x * coeffs[0] + np.sum(z * coeffs[1:],
                            axis=1, keepdims=True))
     moments = np.matrix(np.mean(np.hstack((x * indices, z * indices)), axis=0))
-    return (moments*moments.transpose())[0, 0]
+    if weight is None:
+        weight = np.matrix(np.identity(x.shape[1]+z.shape[1]))
+    return (moments * weight * moments.transpose())[0, 0]
 
 
-def gmmFullData(y, x, z, a0, b0, noise=False):
+def fullDataWeights(coeffs, y, x, z):
+    """ Estimated optimal weights for the fully-observed moments as a function
+    of (true) coefficients and the data.
+    """
+    indices = y-normal.cdf(x * coeffs[0] + np.sum(z * coeffs[1:],
+                           axis=1, keepdims=True))
+    moments = np.matrix(np.hstack((x * indices, z * indices)))
+    return linalg.inv((moments.transpose() * moments) / y.shape[0])
+
+
+def gmmFullData(y, x, z, a0, b0, weighting_iteration=1, noise=False):
     """ The infeasible GMM estimator that is applied for the full data set
     pretending the missing x values are there.
     Arguments:
@@ -135,16 +147,24 @@ def gmmFullData(y, x, z, a0, b0, noise=False):
     a0 = np.array(a0, ndmin=1)
     b0 = np.array(b0)
     coeffs0 = np.concatenate((a0, b0))
+    weight = None
+    for i in range(weighting_iteration):
+        optimum = opt.minimize(
+                    fullDataMoments, coeffs0, args=(y, x, z, weight),
+                    method='BFGS')
+        coeffs0 = optimum.x
+        weight = fullDataWeights(coeffs0, y, x, z)
     optimum = opt.minimize(
-                fullDataMoments, coeffs0, args=(y, x, z), method='BFGS')
+                fullDataMoments, coeffs0, args=(y, x, z, weight),
+                method='BFGS')
     if noise:
         print(optimum.message)
     return optimum.x
 
 
-def gmmNonMissingData(y, x, z, m, a0, b0, noise=False):
+def gmmNonMissingData(y, x, z, m, a0, b0, weighting_iteration=1, noise=False):
     """ The feasible GMM estimator that uses the same moments as the infeasible
-    estimator gmmFullData, but is only applied for the part of the data set that
+    estimator gmmFullData, but is only applied for the part of the data that
     is fully observed (non-missing x values, when m=0).
     Arguments:
     - y, x, z: variables from the data as (n-by-1, n-by-1, n-by-k+1) 2D arrays
@@ -157,15 +177,10 @@ def gmmNonMissingData(y, x, z, m, a0, b0, noise=False):
     """
     a0 = np.array(a0, ndmin=1)
     b0 = np.array(b0)
-    coeffs0 = np.concatenate((a0, b0))
     y = y[np.squeeze((m == 0))]
     x = x[np.squeeze((m == 0))]
     z = z[np.squeeze((m == 0))]
-    optimum = opt.minimize(
-                fullDataMoments, coeffs0, args=(y, x, z), method='BFGS')
-    if noise:
-        print(optimum.message)
-    return optimum.x
+    return gmmFullData(y, x, z, a0, b0, weighting_iteration, noise)
 
 
 def probXCondlZ(xx, zz, xVals, zs, bwidth):
@@ -208,24 +223,11 @@ def yCondlOnZ(coeffs, probs, x, z, gridno):
     # grid: make it a n-by-gridno array
     xGrid = np.stack([np.linspace(start=-2, stop=2, num=gridno)] * len(x))
     expectedYs = normal.cdf(xGrid * coeffs[0] + np.sum(z * coeffs[1:],
-                            axis=1, keepdims=True))
+                                                       axis=1, keepdims=True))
     return np.sum(probs * expectedYs, axis=1, keepdims=True)
 
 
-def yCondlOnMarginalZs(coeffs, probsvector, x, z, gridno):
-    """ This is a not-so-dumb, but still very basic grid implementation of
-    numerical integration for our simulation. NEEDS WORK TO BRING UP TO v0.2
-    """
-    # grid: make it a n-by-gridno array
-    xGrid = np.tile(np.linspace(start=-2, stop=2, num=gridno), len(x)) \
-        .reshape((len(x), gridno))
-    expectedYs = normal.cdf(xGrid * coeffs[0] + np.sum(z * coeffs[1:],
-                            axis=1, keepdims=True))
-    return np.hstack(tuple([np.sum(prob * expectedYs, axis=1, keepdims=True)
-                            for prob in probsvector]))
-
-
-def imputeMoments(coeffs, probs, y, x, z, m, gridno):
+def imputeMoments(coeffs, probs, y, x, z, m, gridno, weight=None):
     """The objective function for the imputation estimator that uses the
     analogue of the AD 2017 moments in addition to the feasible moments in
     gmmNonMissingData.
@@ -247,23 +249,27 @@ def imputeMoments(coeffs, probs, y, x, z, m, gridno):
     moments = np.matrix(np.mean(np.hstack((x * residuals1,
                                            z * residuals1,
                                            z * residuals2)), axis=0))
-    return (moments*moments.transpose())[0, 0]
+    if weight is None:
+        weight = np.matrix(np.identity(moments.shape[1]))
+    return (moments * weight * moments.transpose())[0, 0]
 
 
-def marginalizedImputeMoments(coeffs, probsvector, y, x, z, m, gridno):
-    """ MAY NEED WORK TO BRING IT UP TO v0.2 """
+def imputeMomentsWeights(coeffs, probs, y, x, z, m, gridno):
+    """ Estimated optimal weights for the fully-observed moments as a function
+    of (true) coefficients and the data.
+    """
     residuals1 = (1 - m) * (y-normal.cdf(x * coeffs[0]
                                          + np.sum(z * coeffs[1:],
                                                   axis=1, keepdims=True)))
-    residuals2 = m * (y - yCondlOnMarginalZs(
-                                coeffs, probsvector, x, z, gridno))
-    moments = np.matrix(np.mean(np.hstack((x * residuals1,
-                                           z * residuals1,
-                                           z * residuals2)), axis=0))
-    return (moments*moments.transpose())[0, 0]
+    residuals2 = m * (y - yCondlOnZ(coeffs, probs, x, z, gridno))
+    moments = np.matrix(np.hstack((x * residuals1,
+                                   z * residuals1,
+                                   z * residuals2)))
+    return linalg.inv((moments.transpose() * moments) / y.shape[0])
 
 
-def gmmImpute(y, x, z, m, a0, b0, gridno, bwidth, noise=False):
+def gmmImpute(y, x, z, m, a0, b0, gridno, bwidth,
+              weighting_iteration=1, noise=False):
     """ The feasible GMM estimator that adds the analogues of the AD 2017
     moments to the moments of the gmmNonMissingData estimator.
     Arguments:
@@ -271,8 +277,8 @@ def gmmImpute(y, x, z, m, a0, b0, gridno, bwidth, noise=False):
     - m: missingness indicator, another 2D array (n-by-1)
     - a0, b0: the initial values for maximization (1D arrays) - the dimensions
               must agree with the number of columns in x and z
-    - gridno: (integer) number of grid points on the support of X (fineness of the grid
-              for numerical integration)
+    - gridno: (integer) number of grid points on the support of X (fineness of
+              the grid for numerical integration)
     - bwidth: a list-like of two floats, where the first number is the (equal)
               bwidth for the kernels for the Z dimensions, and the second one
               is the bandwidth for the normal kernel for the pdf estimator for
@@ -291,12 +297,46 @@ def gmmImpute(y, x, z, m, a0, b0, gridno, bwidth, noise=False):
     xVals = np.linspace(start=-2, stop=2, num=gridno)
     probs = probXCondlZ(xx, zz, xVals, np.hstack((z, m)), bwidth)
     # optimization
+    weight = None
+    for i in range(weighting_iteration):
+        optimum = opt.minimize(
+                    imputeMoments, coeffs0,
+                    args=(probs, y, x, z, m, gridno, weight),
+                    method='Nelder-Mead')
+        coeffs0 = optimum.x
+        weight = imputeMomentsWeights(coeffs0, probs, y, x, z, m, gridno)
     optimum = opt.minimize(
-            imputeMoments, coeffs0, args=(probs, y, x, z, m, gridno),
+            imputeMoments, coeffs0, args=(probs, y, x, z, m, gridno, weight),
             method='BFGS', options={'disp': noise})
     if noise:
         print(optimum.message)
     return optimum.x
+
+
+def yCondlOnMarginalZs(coeffs, probsvector, x, z, gridno):
+    """ This is a not-so-dumb, but still very basic grid implementation of
+    numerical integration for our simulation. NEEDS WORK TO BRING UP TO v0.2
+    """
+    # grid: make it a n-by-gridno array
+    xGrid = np.tile(np.linspace(start=-2, stop=2, num=gridno), len(x)) \
+        .reshape((len(x), gridno))
+    expectedYs = normal.cdf(xGrid * coeffs[0] + np.sum(z * coeffs[1:],
+                            axis=1, keepdims=True))
+    return np.hstack(tuple([np.sum(prob * expectedYs, axis=1, keepdims=True)
+                            for prob in probsvector]))
+
+
+def marginalizedImputeMoments(coeffs, probsvector, y, x, z, m, gridno):
+    """ MAY NEED WORK TO BRING IT UP TO v0.2 """
+    residuals1 = (1 - m) * (y-normal.cdf(x * coeffs[0]
+                                         + np.sum(z * coeffs[1:],
+                                                  axis=1, keepdims=True)))
+    residuals2 = m * (y - yCondlOnMarginalZs(
+                                coeffs, probsvector, x, z, gridno))
+    moments = np.matrix(np.mean(np.hstack((x * residuals1,
+                                           z * residuals1,
+                                           z * residuals2)), axis=0))
+    return (moments*moments.transpose())[0, 0]
 
 
 def gmmMarginalizedImpute(y, x, z, m, a0, b0, gridno, bwidth, noise=False):
@@ -379,12 +419,13 @@ def iteration(n, noise=False):
     """
     bwidth1 = [2.154 * n**(-1/3), 1.077 * n**(-1/3)]
     # bwidth2 = [0.1, 0.1]
-    y, x, z, m = dgp(alpha, beta, n, noise)
-    fullDataRes = gmmFullData(y, x, z, a0, b0, noise)
-    nonMissingDataRes = gmmNonMissingData(y, x, z, m, a0, b0, noise)
-    imputeRes = gmmImpute(y, x, z, m, a0, b0, gridno, bwidth1, noise)
+    y, x, z, m = dgp(alpha, beta, n, True)
+    fullDataRes = gmmFullData(y, x, z, a0, b0, 1, noise)
+    nonMissingDataRes = gmmNonMissingData(y, x, z, m, a0, b0, 1, noise)
+    imputeRes = gmmImpute(y, x, z, m, a0, b0, gridno, bwidth1, 1, noise)
     # marginalizedImputeRes = gmmMarginalizedImpute(y, x, z, m, a0, b0, gridno,
     #                                              bwidth2, noise)
+    # DO THE STUFF: BLOCK MATRIX
     return np.array((fullDataRes, nonMissingDataRes, imputeRes))
 # , marginalizedImputeRes))
 
