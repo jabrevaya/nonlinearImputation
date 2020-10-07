@@ -1,0 +1,21 @@
+Corrected comparison between the Oracle imputer estimator and the
+Nadaraya-Watson first stage imputation GMM for n=1000
+
+Means:
+
+Full data:       [[ 1.00872677,  0.502884624, -2.01568216],
+NonMissing data:  [ 1.02475695,  0.510261098, -2.06218365],
+Oracle:           [ 1.02933554,  0.514901691, -2.06593916],
+ImputationNW:     [ 1.02854254,  0.519288274, -2.06702168]]
+
+Standard deviations:
+
+Full data:       [[0.113266018, 0.094981307, 0.136585945],
+NonMissing data:  [0.156797878, 0.145366683, 0.203789256],
+Oracle:           [0.157631289, 0.110787189, 0.175316524],
+ImputationNW:     [0.158951570, 0.114031512, 0.181230815]]
+
+The Oracle estimator still does numerical integration! (with a somewhat
+coarse grid)
+
+The weighting matrix is calculated as ((moments'*moments)/n)^-1
