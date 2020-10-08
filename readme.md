@@ -41,10 +41,10 @@ but only for the 'joint' imputation estimator (and the full and nonmissing sampl
 ### TODO?
 
 - random seed needs to be implemented
-- Save results - DONE 10/06
-- weighting matrix needs to be implemented - DONE 10/06
-- optimal bandwidth selection? (better rule-of-thumb) (Voted down)
-- better nonparametric estimator (B-splines?) for conditional expectation? At least Local linear regression!
-- 2 moving parts: nonparametric missingness structure + nonlinear second stage; should we do only one of these at first? (It would help the computation, the very least) - DONE 10/07
-- Are we interested in Oracle estimator for Linear second stage sim?
-- What to do with the weighting matrix inversion problem? (Talk about directions)
+- better nonparametric estimator (B-splines?) for conditional expectation? At least Local linear regression condl distribution of f_x|z! - LATER
+- Are we interested in Oracle estimator for Linear second stage sim? - MAYBE LATER
+- * true optimal weighting matrix in the linear case (and in the nonlinear case if time)
+- * missingness at random for linear simulations
+- * have linear relationship between x and z
+- play around in general with bwidth and so - not priority
+- * THEORY: derive the cov-var matrix
