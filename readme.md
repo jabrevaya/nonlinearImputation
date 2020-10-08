@@ -19,8 +19,8 @@ E[(1-m) z (y-E[g(ax+bz)|z]]=0
 The estimators appear in this order in the simulation results (as of today):
 * proba.txt, proba2.txt (old, no weighting matrix)
 * NaiveWeighting1000Sim.txt, 1000hist.png - results available
-* OracleVsNW.txt (dirtyyyyy, as of yet) - results available
-* LinearNW.txt (dirty, as of yet) - results available
+* OracleVsNW.txt (also report from cleaned results) - results available
+* LinearNW.txt (also report from cleaned results) - results available
 
 Currently, the estimator for cond'l expectation E[g(ax+bz)|z] is based on simple grid-based numerical integration coupled with a Nadaraya-Watson estimator estimating the probabilities P[X=x|Z-z], a spline implementation is STILL not done/
 
@@ -29,7 +29,7 @@ Currently, the estimator for cond'l expectation E[g(ax+bz)|z] is based on simple
 1. In the first  basic simulation with weighting matrix the picture is what we expected (~25-30% improvement in the overall MSE)
 2. Then problems arise with weighting matrix calculation (invertibility), which given the numerical errors, probably makes the next iteration of GMM minimization a concave problem
 3. When cleaned (4 iterations out of 200), the Oracle performs (almost?) identically with even at n=1,000 in terms of alpha, and much better at the beta-s, pretty close to the full data GMM, so while numerical integration/nonlinearities do take away some of the info, the efficiency loss due to missingness can be mostly recovered
-4. More troubles come for the linear case: when identity=weighting matrix, the imputation actually INCREASES variance, the biases are basically the same. When we have iterative GMM for 1 iteration, even the full info GMM breaks sometimes with n=500, but the imputation ones much more often even at n=1000. I still have to clean it (is it worth it though?)
+4. More troubles come for the linear case: when identity=weighting matrix, the imputation actually INCREASES variance, the biases are basically the same. When we have iterative GMM for 1 iteration, even the full info GMM breaks sometimes with n=500, but the imputation ones much more often even at n=1000 or 4000.
 10/07/2020: Three new simulations
 * once-iterated GMM with weighting matrix in NaiveWeighting1000Sim
 * Oracle estimator GMM in Oracle*.txt
