@@ -25,6 +25,8 @@ The estimators appear in this order in the simulation results (as of today):
 Currently, the estimator for cond'l expectation E[g(ax+bz)|z] is based on simple grid-based numerical integration coupled with a Nadaraya-Watson estimator estimating the probabilities P[X=x|Z-z], a spline implementation is STILL not done/
 
 ## Notes
+10/24/2020: In the linear case it ran relatively faster when we increased the number of Z variable to 5. The interesting take-away is that the imputation estimator is root-n consistent, seemingly, even though we did not adjust the rate of the bandwidth from n^-1/3. Results are in LinearNW5.txt.
+10/23/2020: The troubles for the linear case were due to a bug in the code. The sample is 'large enough' to get an overall-better performance at n=250, but the imputation estimator is better by any measure at n=10,000. The results are in LinearNW2.txt.
 10/07/2020: Take-aways:
 1. In the first  basic simulation with weighting matrix the picture is what we expected (~25-30% improvement in the overall MSE)
 2. Then problems arise with weighting matrix calculation (invertibility), which given the numerical errors, probably makes the next iteration of GMM minimization a concave problem
@@ -40,11 +42,11 @@ but only for the 'joint' imputation estimator (and the full and nonmissing sampl
 
 ### TODO?
 
+- true optimal weighting matrix in the linear case (and in the nonlinear case if time) - DONE
+- missingness at random for linear simulations - STILL?
+- have linear relationship between x and z - STILL?
+- THEORY: derive the cov-var matrix
 - random seed needs to be implemented
 - better nonparametric estimator (B-splines?) for conditional expectation? At least Local linear regression condl distribution of f_x|z! - LATER
 - Are we interested in Oracle estimator for Linear second stage sim? - MAYBE LATER
-- * true optimal weighting matrix in the linear case (and in the nonlinear case if time)
-- * missingness at random for linear simulations
-- * have linear relationship between x and z
 - play around in general with bwidth and so - not priority
-- * THEORY: derive the cov-var matrix

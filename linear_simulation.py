@@ -19,27 +19,32 @@ from scipy import optimize as opt
 from scipy import linalg
 from scipy.stats import norm as normal
 import time
+import trueWeighting
 
 #############################
 #   SIMULATION PARAMETERS   #
 #############################
 
+# Structural parameters
+linearFirst = False
+mar = False
+
 # True values
 alpha = 1
-beta = [0.5, -2]
+beta = [0.5, -2, 1.2, -0.7, 0.3]
 
 # Initial values
 a0 = 0
-b0 = [0, 0]
+b0 = [0, 0, 0, 0, 0]
 
 # Replication number, sample sizes
-reps = 1000
-nlist = [1000, 4000, 10000]
+reps = 10
+nlist = [250, 1000, 4000, 8000]
 
 # File names (fname is req'd, stores the aggregate results, resultsFname
 # can be set to False)
-fname = 'LinearNW.txt'
-resultsFname = 'LinearNW'
+fname = 'LinearNW5.txt'
+resultsFname = 'LinearNW5'
 
 # Random seed (not implemented), noisiness (should be True only for dev)
 seed = 2433523
@@ -119,7 +124,7 @@ def fullDataWeights(coeffs, y, x, z):
     """
     indices = y - (x * coeffs[0]
                    + np.sum(z * coeffs[1:], axis=1, keepdims=True))
-    moments = np.matrix(np.mean(np.hstack((x * indices, z * indices)), axis=0))
+    moments = np.matrix(np.hstack((x * indices, z * indices)))
     return linalg.inv((moments.transpose() * moments) / y.shape[0])
 
 
@@ -186,9 +191,21 @@ def xCondlOnZ(zz, xx, z, bwidth):
     return results
 
 
-def xCondlOnZOracle(z):
-
-    return None
+def XCondlZOracle(z, xVals):
+    """ Takes the z-s (1D array) and grid values from xVals (1D array),
+    and returns the true value for P[X=x|Z=z] for every x in xVals and z in z
+    as an n-by-xVals.shape[1] array.
+    """
+    if z.shape[1] > 1:
+        zs = z[:, 1]
+    else:
+        zs = z
+    z_stack = np.stack([zs] * xVals.shape[0], axis=1)
+    x_stack = np.stack([xVals] * z.shape[0])
+    results = normal.pdf(-np.log(4 / (x_stack + 2) - 1) - 0.6 + 0.4 * z_stack)\
+        * 4 / (4 - x_stack**2)
+    return np.sum(results/np.sum(results, axis=1, keepdims=True) * xVals,
+                  axis=1, keepdims=True)
 
 
 def xCondlOnZSpline(zz, xx, z):
@@ -235,9 +252,9 @@ def imputeMomentsWeights(coeffs, xCondlOnZ, y, x, z, m):
     residuals1 = (1 - m) * (y - (x * coeffs[0]
                             + np.sum(z * coeffs[1:], axis=1, keepdims=True)))
     residuals2 = m * (y - yCondlOnZ(coeffs, xCondlOnZ, z))
-    moments = np.matrix(np.mean(np.hstack((x * residuals1,
-                                           z * residuals1,
-                                           z * residuals2)), axis=0))
+    moments = np.matrix(np.hstack((x * residuals1,
+                                   z * residuals1,
+                                   z * residuals2)))
     return linalg.inv((moments.transpose() * moments) / y.shape[0])
 
 
@@ -272,10 +289,20 @@ def gmmImpute(y, x, z, m, a0, b0,
     elif method == 'NW':
         bwidth1 = [2.154 * n**(-1/3), 1.077 * n**(-1/3)]
         xGivenZ = xCondlOnZ(zz, xx, z, bwidth1)
+    elif method == 'trueweight':
+        bwidth1 = [2.154 * n**(-1/3), 1.077 * n**(-1/3)]
+        xGivenZ = xCondlOnZ(zz, xx, z, bwidth1)
     elif method == 'oracle':
-        xGivenZ = xCondlOnZOracle(z)
+        gridno = 10000
+        xVals = np.linspace(start=-1.999, stop=1.999, num=gridno)
+        xGivenZ = XCondlZOracle(z, xVals)
     # optimization
     weight = None
+    if method == 'trueweight':
+        gridnoo = 1000
+        nn = 10000
+        weight = trueWeighting.getWeights([alpha] + beta, nn, gridnoo,
+                                          noise=False)
     for i in range(weighting_iteration):
         optimum = opt.minimize(
                     imputeMoments, coeffs0,
@@ -345,11 +372,10 @@ def iteration(n, noise=False):
     Returns a numpy array.
     """
     # bwidth2 = [0.1, 0.1]
-    n = 1000
     y, x, z, m = dgp(alpha, beta, n, noise)
     fullDataRes = gmmFullData(y, x, z, a0, b0, 0, noise)
     nonMissingDataRes = gmmNonMissingData(y, x, z, m, a0, b0, 0, noise)
-    # imputeOracleRes = gmmImpute(y, x, z, m, a0, b0, 1, 'oracle', noise)
+# imputeTrueWeightRes = gmmImpute(y, x, z, m, a0, b0, 1, 'trueweight', noise)
     imputeNWRes = gmmImpute(y, x, z, m, a0, b0, 1, 'NW', noise)
     # marginalizedImputeRes = gmmMarginalizedImpute(y, x, z, m, a0, b0, gridno,
     #                                              bwidth2, noise)
