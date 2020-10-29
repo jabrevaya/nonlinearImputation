@@ -25,7 +25,7 @@ b3 = numpy.array([[0.02644199, 0.02567425, 0.03915527],
  [0.03788588, 0.03568636, 0.0545546 ],
  [0.03773806, 0.02823357, 0.04709023]])
 
-true = [1,0.5,-2]
+true = [1,0.5,-2, 1.2, -0.7, 0.3]
 
 def evaluatorMSE(a, b, true):
     MSE_vector = (a - true)**2 + b**2
@@ -59,7 +59,7 @@ def tableCleaner(fname, true):
     print('\n\nMSE report\n')
     evaluatorMSE(a, b, true)
 
-for n in [1000, 4000, 10000]:
+for n in [250, 1000, 4000, 10000]:
     print('n=', n)
-    tableCleaner('LinearNW'+str(n), true)
+    tableCleaner('LinearNW5'+str(n), true)
     print('\n\n\n')

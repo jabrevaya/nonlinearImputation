@@ -38,13 +38,13 @@ a0 = 0
 b0 = [0, 0, 0, 0, 0]
 
 # Replication number, sample sizes
-reps = 10
-nlist = [250, 1000, 4000, 8000]
+reps = 1000
+nlist = [250, 1000, 4000]
 
 # File names (fname is req'd, stores the aggregate results, resultsFname
 # can be set to False)
-fname = 'LinearNW5.txt'
-resultsFname = 'LinearNW5'
+fname = 'LinearNW5test.txt'
+resultsFname = 'LinearNW5test'
 
 # Random seed (not implemented), noisiness (should be True only for dev)
 seed = 2433523
@@ -287,7 +287,7 @@ def gmmImpute(y, x, z, m, a0, b0,
         knotno = int(500 / (np.exp(n**1/2) + 1))
         xGivenZ = xCondlOnZSpline(zz, xx, z, knotno)
     elif method == 'NW':
-        bwidth1 = [2.154 * n**(-1/3), 1.077 * n**(-1/3)]
+        bwidth1 = [1 * n**(-1/7), 1.077 * n**(-1/7)]
         xGivenZ = xCondlOnZ(zz, xx, z, bwidth1)
     elif method == 'trueweight':
         bwidth1 = [2.154 * n**(-1/3), 1.077 * n**(-1/3)]
