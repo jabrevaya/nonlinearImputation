@@ -43,11 +43,9 @@ but only for the 'joint' imputation estimator (and the full and nonmissing sampl
 
 ### TODO?
 
-- true optimal weighting matrix in the linear case (and in the nonlinear case if time) - DONE
-- missingness at random for linear simulations - STILL?
-- have linear relationship between x and z - STILL?
+- semi-marginalized imputation for linear case
+- number of covariates 2-4 in the linear second stage case
 - THEORY: derive the cov-var matrix
-- random seed needs to be implemented
+- random seed needs to be implemented - EVENTUALLY
 - better nonparametric estimator (B-splines?) for conditional expectation? At least Local linear regression condl distribution of f_x|z! - LATER
 - Are we interested in Oracle estimator for Linear second stage sim? - MAYBE LATER
-- play around in general with bwidth and so - not priority
