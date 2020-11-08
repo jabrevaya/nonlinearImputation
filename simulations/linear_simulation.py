@@ -25,30 +25,30 @@ import trueWeighting
 #   SIMULATION PARAMETERS   #
 #############################
 
-# Structural parameters
-linearFirst = False
+# Structural PARAMETERS (missing at random indicator for now)
+
 mar = False
 
 # True values
 alpha = 1
-beta = [0.5, -2, 1.2, -0.7, 0.3]
+beta = [0.5, -0.9, 0.6, -0.3]
 
 # Initial values
 a0 = 0
-b0 = [0, 0, 0, 0, 0]
+b0 = [0, 0, 0, 0]
 
 # Replication number, sample sizes
 reps = 1000
-nlist = [250, 1000, 4000]
+nlist = [250, 500, 1000]
 
 # File names (fname is req'd, stores the aggregate results, resultsFname
 # can be set to False)
-fname = 'LinearNW5test.txt'
-resultsFname = 'LinearNW5test'
+fname = 'Linear4NoWeight.txt'
+resultsFname = 'Linear4NoWeight'
 
 # Random seed (not implemented), noisiness (should be True only for dev)
 seed = 2433523
-noise = False
+noise = True
 
 
 def fromZToX(z):
@@ -75,7 +75,7 @@ def fromZToM(z):
     return m
 
 
-def dgp(alpha, beta, n, noise=False):
+def dgp(alpha, beta, n, mar=False, noise=False):
     """ Creating the full information data set (no missing values) assuming a
     probit model. The relationship between x and (the independent) z, also m
     and z is baked in (a weird nonparametric function described by 'fromZToX'
@@ -84,6 +84,7 @@ def dgp(alpha, beta, n, noise=False):
     arguments:
     - coefficients: 'alpha' (float), 'beta' (array of floats with length k)
     - sample size: n
+    - mar: missing at random indicator
 
     returns the list of arrays:
     - y: n-by-1, the outcome variable (binary, dtype is integer)
@@ -96,7 +97,10 @@ def dgp(alpha, beta, n, noise=False):
     x = fromZToX(z)
     y = x * alpha + np.sum(z * beta, axis=1, keepdims=True) \
         + np.random.normal(size=(n, 1))
-    m = fromZToM(z)
+    if mar:
+        m= (np.random.uniform(size=(n,1))>0.6) * 1
+    else:
+        m = fromZToM(z)
     if noise:
         print('Missingness rate: ', np.mean(m))
         print('Mean of y:', np.mean(y))
@@ -182,8 +186,11 @@ def xCondlOnZ(zz, xx, z, bwidth):
     if zz.shape[1] > 1:
         zz = np.stack([zz[:, 1:]] * z.shape[0])
         zis = np.stack([z[:, 1:]] * zz.shape[1])
-    elif zz == np.ones(zz.shape):
-        return np.mean(xx)
+    elif np.array_equal(zz, np.ones(zz.shape)):
+        return np.mean(xx) * np.ones(z.shape)
+    else:
+        zz = np.stack([zz] * z.shape[0])
+        zis = np.stack([z] * zz.shape[1])
     kernel1 = np.prod(normal.pdf((zz - np.einsum('ijk->jik', zis))
                                  / bwidth[0]), axis=-1)
     results = np.asarray(np.asmatrix(kernel1) * np.asmatrix(xx)) \
@@ -213,15 +220,15 @@ def xCondlOnZSpline(zz, xx, z):
     return None
 
 
-def yCondlOnZ(coeffs, xCondlOnZ, z):
+def yCondlOnZ(coeffs, xCondlZ, z):
     """ Conditional expectation returns.
     """
-    expectedYs = xCondlOnZ * coeffs[0] \
+    expectedYs = xCondlZ * coeffs[0] \
         + np.sum(z * coeffs[1:], axis=1, keepdims=True)
     return expectedYs
 
 
-def imputeMoments(coeffs, xCondlOnZ, y, x, z, m, weight=None):
+def imputeMoments(coeffs, xCondlZ, y, x, z, m, weight=None):
     """The objective function for the imputation estimator that uses the
     analogue of the AD 2017 moments in addition to the feasible moments in
     gmmNonMissingData.
@@ -236,7 +243,7 @@ def imputeMoments(coeffs, xCondlOnZ, y, x, z, m, weight=None):
     """
     residuals1 = (1 - m) * (y - (x * coeffs[0]
                             + np.sum(z * coeffs[1:], axis=1, keepdims=True)))
-    residuals2 = m * (y - yCondlOnZ(coeffs, xCondlOnZ, z))
+    residuals2 = m * (y - yCondlOnZ(coeffs, xCondlZ, z))
     moments = np.matrix(np.mean(np.hstack((x * residuals1,
                                            z * residuals1,
                                            z * residuals2)), axis=0))
@@ -258,8 +265,7 @@ def imputeMomentsWeights(coeffs, xCondlOnZ, y, x, z, m):
     return linalg.inv((moments.transpose() * moments) / y.shape[0])
 
 
-def gmmImpute(y, x, z, m, a0, b0,
-              weighting_iteration=1, method='spline', noise=False):
+def gmmImpute(y, x, z, m, a0, b0, w_iteration=1, method='NW', noise=False):
     """ The feasible GMM estimator that adds the analogues of the AD 2017
     moments to the moments of the gmmNonMissingData estimator.
     Arguments:
@@ -287,7 +293,7 @@ def gmmImpute(y, x, z, m, a0, b0,
         knotno = int(500 / (np.exp(n**1/2) + 1))
         xGivenZ = xCondlOnZSpline(zz, xx, z, knotno)
     elif method == 'NW':
-        bwidth1 = [1 * n**(-1/7), 1.077 * n**(-1/7)]
+        bwidth1 = [2.154 * n**(-1/3), 0]
         xGivenZ = xCondlOnZ(zz, xx, z, bwidth1)
     elif method == 'trueweight':
         bwidth1 = [2.154 * n**(-1/3), 1.077 * n**(-1/3)]
@@ -303,7 +309,7 @@ def gmmImpute(y, x, z, m, a0, b0,
         nn = 10000
         weight = trueWeighting.getWeights([alpha] + beta, nn, gridnoo,
                                           noise=False)
-    for i in range(weighting_iteration):
+    for i in range(w_iteration):
         optimum = opt.minimize(
                     imputeMoments, coeffs0,
                     args=(xGivenZ, y, x, z, m, weight),
@@ -312,6 +318,134 @@ def gmmImpute(y, x, z, m, a0, b0,
         weight = imputeMomentsWeights(coeffs0, xGivenZ, y, x, z, m)
     optimum = opt.minimize(
             imputeMoments, coeffs0, args=(xGivenZ, y, x, z, m, weight),
+            method='BFGS', options={'disp': noise})
+    if noise:
+        print(optimum.message)
+
+    return optimum.x
+
+
+def yCondlOnZk(coeffs, xCondlZk, z):
+    """ Conditional expectation of Y given Z_k=z_k for every observation.
+
+    Inputs:
+     - coeffs: candidate coefficient probsvector (1D array-like)
+     - xCondlZk: 2D-array (n-times-1) conditional expectation of X given
+       Z-_k=z_k for every row
+     - z: 2D array (n-times-K), the z observable values from the data set
+
+    Returns: 2D array of E[Y_i|Z^k_i=z^k_i]
+    """
+    expectedYs = xCondlZk * coeffs[0] \
+        + np.sum(z * coeffs[1:], axis=1, keepdims=True)
+    return expectedYs
+
+
+def mImputeMoments(coeffs, xCondlZk, y, x, z, m, weight=None, lst='all'):
+    """The objective function for the imputation estimator that uses the
+    analogue of the AD 2017 moments in addition to the feasible moments in
+    gmmNonMissingData.
+    Its arguments are
+    - coeffs: (k+1 numpy array) the coefficient values
+    - xCondlZk: conditional expectation E[X|Z_k=z_k] (n-times-len(list) or
+                n-times-K 2D array)
+    - y, x, z: the data in separate arrays (n-by-1, n-by-1, n-by-k shapes)
+    - m: missingness indicator as 2D array
+    - weight: weighting matrix for the moments (defaults to 'None' = identity)
+    - list: the list of moments required (defaults to 'all': all Z-s)
+
+    Returns the value of the GMM objective function as a float.
+    """
+    residuals1 = (1 - m) * (y - (x * coeffs[0]
+                            + np.sum(z * coeffs[1:], axis=1, keepdims=True)))
+    if lst == 'all':
+        lst = range(xCondlZk.shape[1])
+    moments2 = np.hstack([z[:, lst[i]] * m
+                         * (y - yCondlOnZk(coeffs, xCondlZk[:, i:i+1], z))
+                         for i in range(len(lst))])
+    moments = np.matrix(np.mean(np.hstack((x * residuals1,
+                                           z * residuals1,
+                                           moments2)), axis=0))
+    if weight is None:
+        weight = np.matrix(np.identity(moments.shape[1]))
+
+    return (moments * weight * moments.transpose())[0, 0]
+
+
+def mImputeMomentsWeights(coeffs, xCondlZk, y, x, z, m, lst='all'):
+    """ Estimates the optimal weighting matrix, based on coeffificent estimates
+    and data for the marginalized imputation GMM estimator.
+
+    Arguments:
+    - coeffs: 1D-array or list-like
+    - xCondlZk: matrix of conditional expectation of X_i given Z_k=z_k
+                (2D array, n-by-len(list))
+    - y,x,z,m: the data
+    - list: the list of z-dimensions we use for the imputation
+
+    Returns the estimated optimal weighting matrix as 2D matrix.
+    """
+#    coeffs=coeffs0
+#    xCondlZk=xGivenZ
+    residuals1 = (1 - m) * (y - (x * coeffs[0]
+                            + np.sum(z * coeffs[1:], axis=1, keepdims=True)))
+    if lst == 'all':
+        lst = range(xCondlZk.shape[1])
+    moments2 = np.hstack([z[:, lst[i]] * m
+                         * (y - yCondlOnZk(coeffs, xCondlZk[:, i:i+1], z))
+                         for i in range(len(lst))])
+    moments = np.matrix(np.hstack((x * residuals1, z * residuals1, moments2)))
+
+    return linalg.inv((moments.transpose() * moments) / y.shape[0])
+
+
+def gmmMarginalizedImpute(y, x, z, m, a0, b0, lst='all', w_iteration=1, noise=False):
+    """ The feasible GMM estimator that adds the analogues of the AD 2017
+    moments to the moments of the gmmNonMissingData estimator but 1-by-1.
+    Arguments:
+    - y, x, z: variables from the data as (n-by-1, n-by-1, n-by-k+1) 2D arrays
+    - m: missingness indicator, another 2D array (n-by-1)
+    - a0, b0: the initial values for maximization (1D arrays) - the dimensions
+              must agree with the number of columns in x and z
+    - bwidth: a list-like of two floats, where the first number is the (equal)
+              bwidth for the kernels for the Z dimensions, and the second one
+              is the bandwidth for the normal kernel for the pdf estimator for
+              the X
+    - list: 1D-list of z-s that imputation for x is done based on; defaults to
+            'all', when all marginal moments are included in the calculation
+    - weighting iteration: number of times the weighting matrix should be
+                           iterated, defaults to 1
+    - noise: boolean, set it to True if want to print the messages of the
+             optimizer (automatically suppressed when iteration() is run with
+             the MC decorator)
+
+    Returns the estimated values as a single 1D-array.
+    """
+    # initializing variables
+    a0 = np.array(a0, ndmin=1)
+    b0 = np.array(b0)
+    coeffs0 = np.concatenate((a0, b0))
+    n = y.shape[0]
+    if lst == 'all':
+        lst = range(z.shape[1])
+
+    # nonmissing sample, grid, calculating conditional expectation
+    xx = x[np.squeeze((m == 0))]
+    zz = z[np.squeeze((m == 0))]
+    bwidth1 = [1.4 * n**(-1/5), 0]
+    xGivenZ = np.hstack([xCondlOnZ(zz[:, i:i+1], xx, z[:, i:i+1], bwidth1)
+                        for i in lst])
+    # optimization
+    weight = None
+    for i in range(w_iteration):
+        optimum = opt.minimize(
+                    mImputeMoments, coeffs0,
+                    args=(xGivenZ, y, x, z, m, weight, lst),
+                    method='BFGS')
+        coeffs0 = optimum.x
+        weight = mImputeMomentsWeights(coeffs0, xGivenZ, y, x, z, m, lst)
+    optimum = opt.minimize(
+            mImputeMoments, coeffs0, args=(xGivenZ, y, x, z, m, weight, lst),
             method='BFGS', options={'disp': noise})
     if noise:
         print(optimum.message)
@@ -371,16 +505,16 @@ def iteration(n, noise=False):
     AD imputation GMM, marginalized imputation GMM)
     Returns a numpy array.
     """
-    # bwidth2 = [0.1, 0.1]
-    y, x, z, m = dgp(alpha, beta, n, noise)
+    y, x, z, m = dgp(alpha, beta, n, mar, noise)
     fullDataRes = gmmFullData(y, x, z, a0, b0, 0, noise)
     nonMissingDataRes = gmmNonMissingData(y, x, z, m, a0, b0, 0, noise)
 # imputeTrueWeightRes = gmmImpute(y, x, z, m, a0, b0, 1, 'trueweight', noise)
-    imputeNWRes = gmmImpute(y, x, z, m, a0, b0, 1, 'NW', noise)
-    # marginalizedImputeRes = gmmMarginalizedImpute(y, x, z, m, a0, b0, gridno,
-    #                                              bwidth2, noise)
+    imputeNWRes = gmmImpute(y, x, z, m, a0, b0, 0, 'NW', noise)
+#    marginalizedImputeRes = gmmMarginalizedImpute(y, x, z, m, a0, b0,
+#                                                  [1, 2], 1, noise)
     # DO THE STUFF: BLOCK MATRIX
     return np.array((fullDataRes, nonMissingDataRes, imputeNWRes))
+                    # marginalizedImputeRes))
 
 ###################
 #    SIMULATION   #
