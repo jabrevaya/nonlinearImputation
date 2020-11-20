@@ -43,11 +43,12 @@ but only for the 'joint' imputation estimator (and the full and nonmissing sampl
 09/23/2020: We needed to impose missingness to around 50% (around 55%) - questionable in the end
 
 ### TODO?
-- the Overleaf write-up actually contains 2 different ways to estimate f(a,b;z)=E[y|z,m=0]=E[y|z,m=1]; the second onemay be better (1 bandwidth)
-- redo the simulations that were interesting ???
-- semi-marginalized imputation for linear case - DONE for the linear case, but maybe badly (more???)
-- number of covariates 2-4 in the linear second stage case - DONE
-- THEORY: derive the cov-var matrix - only done asmyptotically
-- random seed needs to be implemented - EVENTUALLY
-- better nonparametric estimator (B-splines?) for conditional expectation? At least Local linear regression condl distribution of f_x|z! - LATER
-- Are we interested in Oracle estimator for Linear second stage sim? - MAYBE LATER
+- PETER: Write down again 'Model' section and estimator definition, write a paragraph about the technical papers we could use for theory
+- JASON: lit review, introduction
+- the Overleaf write-up actually contains 2 different ways to estimate f(a,b;z)=E[y|z,m=0]=E[y|z,m=1]; the second one may be better (1 bandwidth) - LATER
+- random seed needs to be implemented - LATER
+- redo the simulations that were interesting - LATER
+- continuous updating (have more iterations for the weighting matrix in code) - LATER
+- search for bugs in the marginalized case - MAYBE MUCH LATER
+- better nonparametric estimator (B-splines?) for conditional expectation? At least Local linear regression condl distribution of f_x|z! - MUCH LATER
+- Are we interested in Oracle estimator for Linear second stage sim? - MAYBE MUCH LATER
