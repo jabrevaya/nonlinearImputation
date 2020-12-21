@@ -52,8 +52,12 @@ but only for the 'joint' imputation estimator (and the full and nonmissing sampl
 09/23/2020: We needed to impose missingness to around 50% (around 55%) - questionable in the end
 
 ### TODO?
+- probit model - effect of size of z, sample size, complete case
+- come up with a more general model fitting likelihoods - talk about pop moments instead of model 2,600 - survey
+- rewrite the model with Z^1 and Z^2, leave discussion in
+- redefine cond'l expectation E[y|z], use little e
+- "complete case GMM"; tilde missing at (11), hats in (17)
 - PETER: theory finish (define the estimator that only uses fully observed observations, write down proofs better, clean up)  NO PROOFS!!!
-- PETER: Write down again 'Model' section and estimator definition, write a paragraph about the technical papers we could use for theory DONE
 - JASON: lit review, introduction
 - the Overleaf write-up actually contains 2 different ways to estimate f(a,b;z)=E[y|z,m=0]=E[y|z,m=1]; the second one may be better (1 bandwidth) - LATER
 - random seed needs to be implemented - LATER
