@@ -30,30 +30,24 @@
 
 
 \section{Introduction}
-In this paper we consider GMM estimation in models where given a known function $g_0$, the LHS variable ($Y_i$) and RHS variables ($X_i \in \mathbb{R},\mathbf{Z_i} \in {1} \times \mathbb{R}^k$) there is a set of {\color{red}differentiable} population moment functions
+In this paper we consider GMM estimation in models where given a known function $g_0$, the LHS variable ($Y_i$) and RHS variables ($X_i \in \mathbb{R},Z_i \in {1} \times \mathbb{R}^k$) there is a set of {\color{red}differentiable} population moment functions $g_0$ that are zero in expectation if and only if they are evaluated at the true parameter values ($\beta$),
 \begin{align}
-E[g_0(Y_i, (X_i, \mathbf{Z}_i), a, \mathbf{b})],
+E[g_0(Y_i, X_i, Z_i,\beta)|X_i,Z_i] = 0,
 \end{align}
-for which
-\begin{align}
-E[g_0(Y_i, (X_i, \mathbf{Z}_i), a, \mathbf{b})] = 0 \iff (a,\mathbf{b})=(\alpha, \mathbf{\beta}),
-\end{align}
-where the vector $(\alpha, \mathbf{\beta})\in \mathbb{R}^{k+2}$ is the true parameter values the researcher aims to estimate.
+where the vector $\mathbf{\beta}\in \mathbb{R}^{p}$ is what the researcher aims to estimate.
 
+The key problem in our setting is that the scalar $X_i$ variable is missing whenever $M_i$, the missingness indicator is 1. We are exploring the properties of a simple imputation GMM estimator under the further assumption that the conditional distribution of $X_i$ and $Y_i$ given $Z_i$ is independent of $M_i$. 
 
-The key problem in our setting is that the scalar $X_i$ variable is missing whenever $M_i$, the missingness indicator is 1. We are exploring the properties of a simple imputation GMM estimator under the further assumption that the conditional distribution of $X_i$ and $Y_i$ given $\mathbf{Z}_i$ is independent of $M_i$. 
-{\color{red} I do not want to introduce the split of $Z_i$ here, as I think it confuses more in the intro than gives clarity. We really only use those variables for a second-level point Let me know what you think. 
-}
 \begin{example}[Probit Non-linear Least Squares]
-	The researcher collected data of a binary outcome variable $Y$ and the vector of independent variables $\mathbf{Z}$ for a large sample, but only has information about a control variable $X$ in a subsample. The following model connects the observables:
+	The researcher collected data of a binary outcome variable $Y$ and the vector of independent variables $Z$ for a large sample, but only has information about a control variable $X$ in a subsample. The following model connects the observables:
 	\begin{align}
-	Y_i&= \mathbf{1}[\alpha X_i + \mathbf{Z}_i\mathbf{\beta}>\epsilon_i] \label{eq_probitEx1}\\
+	Y_i&= \mathbf{1}[\alpha X_i + Z_i\gamma>\epsilon_i] \label{eq_probitEx1}\\
 	\epsilon_i&\sim N[0,1] \label{eq_probitEx2}
 	\end{align}
 	In the following we denote the cumulative distribution function of the standard normal distribution by $\Phi$ and the probability density function by $\phi$. One way of estimating the model is non-linear least squares, when the set of population moments is
 	\[E\left[\begin{array}{c}
-	X_i(Y_i-\Phi(aX_i+\mathbf{Z_ib}))\\
-	\mathbf{Z_i}(Y_i-\Phi(aX_i+\mathbf{Z_ib}))
+	X_i(Y_i-\Phi(aX_i+Z_ic))\\
+	Z_i(Y_i-\Phi(aX_i+Z_ic))
 	\end{array}
 	\right].
 	\]
@@ -63,13 +57,13 @@ The key problem in our setting is that the scalar $X_i$ variable is missing when
 	Assume that the data generating process is the same as in the previous example (equations \eqref{eq_probitEx1}-\eqref{eq_probitEx2}). Another way to estimate the coefficients is based on the likelihood principle that corresponds to the population moment
 	\begin{align*}
 	E\left[\begin{array}{c}
-	X_i\left(Y_i \frac{\phi(aX_i+\mathbf{Z_ib})}{\Phi(aX_i+\mathbf{Z_ib})} - (1-Y_i)\frac{\phi(aX_i+\mathbf{Z_ib})}{1-\Phi(aX_i+\mathbf{Z_ib})}\right) \\
-	\mathbf{Z_i}\left(Y_i \frac{\phi(aX_i+\mathbf{Z_ib})}{\Phi(aX_i+\mathbf{Z_ib})} - (1-Y_i)\frac{\phi(aX_i+\mathbf{Z_ib})}{1-\Phi(aX_i+\mathbf{Z_ib})}\right)
+	X_i\left(Y_i \frac{\phi(aX_i+Z_ic)}{\Phi(aX_i+Z_ic)} - (1-Y_i)\frac{\phi(aX_i+Z_ic)}{1-\Phi(aX_i+Z_ic)}\right) \\
+	Z_i\left(Y_i \frac{\phi(aX_i+Z_ic)}{\Phi(aX_i+Z_ic)} - (1-Y_i)\frac{\phi(aX_i+Z_ic)}{1-\Phi(aX_i+Z_ic)}\right)
 	\end{array}
 	\right].
 	\end{align*}
 \end{example}
-In both examples, our key exclusion restrictions are satisfied when the missingness is caused by the always observed variables $\mathbf{Z}_i$, but conditional on these, $Y_i$ and $X_i$ are not related to it.
+In both examples, our key exclusion restrictions are satisfied when the missingness is caused by the always observed variables $Z_i$, but conditional on these, $Y_i$ and $X_i$ are not related to it.
 
 Given our setup, it is possible to estimate the parameter of interest using the completely observed records in the data based on the population moment $g_0$ (the complete case GMM estimator). We show when it is advantageous to augment the original moments using simple imputation to increase the efficiency of the estimates. 
 
@@ -78,127 +72,130 @@ Given our setup, it is possible to estimate the parameter of interest using the 
 \section{A simple imputation GMM estimator}
 
 \subsection{Model assumptions and estimators}
-We denote the conditional pdf of $X_i$ given $\mathbf{Z_i}, M_i$ as $f_{x|z,m}$. Let us denote the set of random vectors with the same support as $Supp(X_i,Z_i)$ as $\mathcal{W}$.
+We denote the conditional pdf of $X_i$ given $Z_i, M_i$ as $f_{x|z,m}$. Let us denote the set of random vectors with the same support as $Supp(X_i,Z_i)$ as $\mathcal{W}$.
 \begin{assumption}[Model] \label{ass_model}
 There exists a known differentiable $g_0$ vector-valued function such that
 \begin{enumerate}
-\item $E[g_0(Y_i,W, a, \mathbf{b})] = 0 \iff (a,\mathbf{b})=(\alpha, \mathbf{\beta})$ for every $W \in \mathcal{W}$,
-\item {\color{red}$\mathbf{Z}_i$ can be partitioned into $\mathbf{Z}_i= [\mathbf{Z}^0_i, \mathbf{Z}^1_i]$, such that}
-\begin{align}
-E[g_0(Y_i, (X_i, \mathbf{Z}_i), a, \mathbf{b})|M_i, \mathbf{Z}_i^1] = E[g_0(Y_i, X_i, \mathbf{Z}_i, a, \mathbf{b})|\mathbf{Z}^1_i]
-\end{align}
-\item $P[M_i=1|X_i,\mathbf{Z}_i]<1$ $X_i,\mathbf{Z}_i-a.s.$
+\item $E[g_0(Y_i,X_i, Z_i, b)] = 0 \iff b=\beta$,
+\item $E[g_0(Y_i, X_i, Z_i, b)|X_i, Z_i, M_i] = 0 \Leftarrow b=\beta,$
+\item $P[M_i=1|X_i,Z_i]<1$ $X_i,Z_i-a.s.$
+\item $Z_i$ can be partitioned into $Z_i= [Z^0_i, Z^1_i]$, such that conditional on $Z_i^1$, the distribution of $X_i, Z^0_i$ is the same whether $M_i=0$ or $M_i=1$.
 \end{enumerate}
 \end{assumption}
-The first condition in Assumption \ref{ass_model} ensures identification in the case without missingness. The second condition restrict the missingness structure, but they are substantially weaker than the often used missing-at-completely-random assumption. This condition is satisfied if the $(Y,X_i,Z^0_i)$ vector is independent of $M_i$, conditional on $Z_i^1$. The third condition is used as a regulatory assumption but it also ensures that the support of the observables does not change conditional on $M_i=0$ or $M_i=1$.
+The first condition in Assumption \ref{ass_model} ensures identification in the case without missingness. The second and third conditions are the usual assumptions for the validity of the \textit{complete case GMM} estimator\footnote{See the definition below.} under missing-at-random (MAR), when the researcher simply omits the observations with missing values. The fourth condition is the weakened version of the missing-at-completely-random assumption often assumed by researchers, but it is a stronger assumption than MAR. These conditions are satisfied if the $(Y,X_i,Z^0_i)$ vector is independent of $M_i$, conditional on $Z_i^1$. Further we denote the dimension of the support of $Z^1_i$ by $k_1$.
 
-A weaker version of the second
-\[E[g_0(Y_i, (X_i, \mathbf{Z}_i), a, \mathbf{b})|M_i, \mathbf{Z}_i, X_i] = E[g_0(Y_i, X_i, \mathbf{Z}_i, a, \mathbf{b})|\mathbf{Z}_i, X_i],
-\]
-and the third assumption is used to establish identification for the \emph{complete case GMM estimator} that is based on the population moment
-\begin{align}
-E[\tilde{g}(Y_i,\mathbf{Z}_i,X_i,M_i; a,\mathbf{b})] = E\left[(1-M_i) g_0(Y_i, (X_i, \mathbf{Z}_i), a, \mathbf{b})\right]=0 \ a.s.
-\end{align}
-The first four arguments of $\tilde{g}$ are from the support of the corresponding random variables in our model. The fifth and sixth arguments are elements from  the (finite dimensional) parameter space of $\alpha, \beta$. Starting from here, we are going to abandon the bold letter notation for vectors.
+Next we define three GMM estimators: 
+\begin{enumerate}
+	\item The infeasible \emph{full-data GMM estimator} with the moment
+	\[E[g_0(Y_i, Z_i, X_i; \beta)]=0,
+	\]
+	\item The \emph{complete case GMM estimator} that is based on the population moment
+	\begin{align}
+	E[\tilde{g}(Y_i, Z_i, X_i, M_i; \beta)] = E\left[(1-M_i) g_0(Y_i, X_i,Z_i; \beta )\right]=0 \ a.s.
+	\end{align}
+	for $\tilde{g}: Supp(Y_i, Z_i, X_i, M_i) \times B$ for $B \subset \mathbb{R}^p,$
+	\item The \emph{imputation GMM estimator} with population moment
+	\begin{align}
+	E[g(Y_i,Z_i,X_i,M_i; b; e)]=\left[\begin{array}{c}
+	(1-M_i) g_0(Y_i,X_i,Z_i,b)]\\
+	M_i e(Y_i, Z_i^1; b)
+	\end{array}\right],
+	\end{align}
+	with $e: \mathbb{R}^{k_1}\times B \rightarrow \mathbb{R}$
+	\begin{align}
+	e(y, z^1,b)= E[g_0(Y_i, X_i,Z_i, b)|Y_i=y, Z_i=z].
+	\end{align}
+\end{enumerate}
 
-In addition to these identifying moments we also add imputation moments to our \emph{imputation GMM estimator} in order to increase efficiency. Define the vector-valued function $g$ as
+The infeasible \emph{full-data GMM estimator} has the sample moment
 \begin{align}
-    g(y,z,x,m; a,b; e)=\left[\begin{array}{c}
-        (1-m) g_0(y, (x,z), a, b)]\\
-          m e(z^1; a,b)
-    \end{array}\right],
+\hat{g}_0(y_i,z_i,x_i;b) = n^{-1}\sum_{i=1}^n g_0(y_i,x_i,z_i,b)
 \end{align}
-where the function $e: \mathbf{R}^k \rightarrow \mathbf{R}$ at the true values is defined by
+and given a weighting matrix $\hat{W}_0\stackrel{p}{\rightarrow} W_0$ (positive definite) minimizes
 \begin{align}
-e(z^1,a,b)= E[g_0(y, (x,z), a, b)]
+\hat{Q}^0_n(b)= \hat{g}_0(b)'\hat{W}_0\hat{g}_0(b)
 \end{align}
-The function $g$ has the same same first arguments as $\tilde{g}$, while the last argument is a function that represents the conditional expectation of $g_0(., a,b)$ given $\mathbf{Z}_i=z$. Clearly, this function is identified, given the second exclusion restriction in Assumption \ref{ass_model}.
+with respect to $b$.
 
-Define the sample analogues (for a sample of size $n$)
+The \textit{complete case estimator} is the result of a usual strategy of omitting the observations with missing values. This estimator is based on the moment
 \begin{align}
-    \hat{g}(a,b; \hat{E}[y|z])&=n^{-1}\sum_{i=1}^n g(y_i,z_i,x_i,m_i; a,b; \hat{E}[y|z])= \\
+\hat{\tilde{g}}(b)&=n^{-1}\sum_{i=1}^n \tilde{g}(y_i,z_i,x_i, m_i; b)= \\
+&=n^{-1}\sum_{i=1}^n
+(1-m_i) g_0(y_i,z_i,x_i; b), \nonumber %\\
+\end{align}
+and defined as the M-estimator minimizing
+\begin{align}
+\hat{\tilde{Q}}_n(b)= \hat{\tilde{g}}(b)'\hat{\tilde{W}}\hat{\tilde{g}}(b)
+\end{align}
+with respect to $b$, where the $\hat{\tilde{W}}$ is a symmetric weighting matrix such that for some $\tilde{W}$ (positive definite)
+\begin{align}
+\hat{\tilde{W}} \stackrel{p}{\rightarrow}\tilde{W}.
+\end{align}
+Under Assumption \ref{ass_model} this estimator is consistent. 
+
+In addition to the feasible identifying moments $\tilde{g}$ we also add imputation moments to our \emph{imputation GMM estimator} in order to increase efficiency. The function $g$ has the same first arguments as $\tilde{g}$, while the last argument is a function that represents the conditional expectation of $g_0(Y_i, X_i, Z_i, b)$ given $Z_i=z$ and $Y_i=y$. Clearly, this function is identified from the complete subsample. Define the sample analogues (for a sample of size $n$)
+\begin{align}
+    \hat{g}(b, \hat{e})&=n^{-1}\sum_{i=1}^n g(y_i,z_i,x_i,m_i; b; \hat{e})= \\
     &=n^{-1}\sum_{i=1}^n\left[\begin{array}{c}
-        (1-m_i) x_i(y_i- h(ax_i+z_i b))  \\
-        (1-m_i) z_i(y_i- h(ax_i+z_i b)) \\
-          m_i z_i(y_i- \hat{E}[y|z](z_i; a,b))
-    \end{array}\right], \nonumber %\\
-%    \hat{E}[y_i|z_i]&= \int h(a x+b z_i) \hat{f}_{x|z}(x,z_i)dx,
+        (1-m_i) g_0(y_i,z_i,x_i; b)  \\
+         m_i \hat{e}(y_i, z_i; b))
+    \end{array}\right], \nonumber
 \end{align}
-where $\hat{E}_{y|z}$ is an estimator of the conditional expectation $E(y|z)$. At the end of this section we give the Nadaraya-Watson estimator as a specific example for a viable $\hat{E}(y|z)$. The imputation GMM estimator is minimizing
+where $\hat{e}$ is an estimator of the conditional expectation $e$. At the end of this section we give the Nadaraya-Watson estimator as a specific example for a viable $\hat{e}$. The \textit{imputation GMM estimator} is minimizing
 \begin{align}
-    \hat{Q}_n(a,b)= \hat{g}(a,b;\hat{E}[y|z])'\hat{W}\hat{g}(a,b;\hat{E}[y|z])
+    \hat{Q}_n(b)= \hat{g}(b;\hat{e})'\hat{W}\hat{g}(b;\hat{e})
 \end{align}
-with respect to $a,b$, where the $\hat{W}$ is a symmetric weighting matrix such that for some $W$ (positive definite)
+with respect to $b$, where the $\hat{W}$ is a symmetric weighting matrix such that for some $W$ (positive definite)
 \begin{align}
     \hat{W} \stackrel{p}{\rightarrow}W.
 \end{align}
 
-The complete case GMM estimator that is based on the moment
-\begin{align}
-    \hat{\tilde{g}}(a,b)&=n^{-1}\sum_{i=1}^n g(y_i,z_i,x_i, m_i; a,b)= \\
-&=n^{-1}\sum_{i=1}^n\left[\begin{array}{c}
-(1-m_i) x_i(y_i- h(ax_i+z_i b))  \\
-(1-m_i) z_i(y_i- h(ax_i+z_i b))
-\end{array}\right], \nonumber %\\
-\end{align}
-and defined as the M-estimator minimizing
-\begin{align}
-\hat{\tilde{Q}}_n(a,b)= \hat{\tilde{g}}(a,b)'\hat{\tilde{W}}\hat{\tilde{g}}(a,b)
-\end{align}
-with respect to $a,b$, where the $\hat{\tilde{W}}$ is a symmetric weighting matrix such that for some $\tilde{W}$ (positive definite)
-\begin{align}
-\hat{\tilde{W}} \stackrel{p}{\rightarrow}\tilde{W}.
-\end{align}
-
-
 \subsection{Asymptotic properties}
-In the following arguments we closely follow Ichimura and Newey (2015) and Chernozhukov et al. (2018). We denote the estimator as a random variable by $\hat{\theta}_n$, while the true value $\theta= (\alpha,\beta)$. We also introduce the notation $\hat{G}(\theta;\hat{E}[y|z])$ for the derivative of $\hat{g}$ with respect to the parameter vector. Correspondingly, the derivative of $E[g]$ is denoted by $G$.
+In the following arguments we closely follow Ichimura and Newey (2015) and Chernozhukov et al. (2018). We denote the imputation estimator as a random variable by $\hat{\beta}_n$, while the true value $\beta$. We also introduce the notation $\hat{G}(\beta;\hat{e})$ for the derivative of $\hat{g}$ with respect to the parameter vector. Correspondingly, the derivative of $E[g]$ is denoted by $G$.
 
 \begin{assumption}\label{ass_regulatory1}
-	We place several smoothness assumptions on the structural functions.
+	We make several regulatory assumptions.
 	\begin{itemize}
-		\item $f_{x|z}(x,z)$ is continuously differentiable and uniformly bounded,
-		\item $h$ is continuously differentiable with bounded derivatives.
-	\end{itemize}
-	Further usual assumptions:
-	\begin{enumerate}
+%		\item $f_{x|z}(x,z)$ is continuously differentiable and uniformly bounded,
+		\item $g_0$ is continuously differentiable with bounded derivatives,
 		\item random sampling,
-		\item $\hat{E}[y|z](a,b)\stackrel{p}{\rightarrow} E[y|z](a,b)$ uniformly over $z$ and $(a,b) \in A \times B$,
-		\item $\alpha,\beta \in A \times B$, a compact set,
+		\item $\beta \in B$, a compact set,
 		\item $G'WG$ is a.s. an invertible matrix.
-	\end{enumerate}
+		\item $\hat{e}(y,z, b)\stackrel{p}{\rightarrow} e(y,z, b)$ uniformly,
+		\item $\sup_{y,z}\hat{e}(y,z, b)<\infty$ almost surely for all $b \in B$,
+	\end{itemize}
 \end{assumption}
 
-Writing up the first order Taylor expansion of $\hat{g}$ around $\theta$ gives
+Writing up the first order Taylor expansion of $\hat{g}$ around $\beta$ gives
 \begin{align}
-    0&=\hat{G}'(\hat{\theta}_n;\hat{E}[y|z])\hat{W}\hat{g}(\hat{\theta}_n;\hat{E}[y|z])= \\ &=\hat{G}'(\hat{\theta}_n;\hat{E}[y|z])\hat{W}\hat{g}(\theta;\hat{E}[y|z])+ \hat{G}'(\hat{\theta}_n;\hat{E}[y|z])\hat{W}\hat{G}(\bar{\theta}_n;\hat{E}[y|z])(\hat{\theta}_n-\theta)= \nonumber \\
-    &= \hat{G}'\hat{W}\hat{g}_0+ \hat{G}'\hat{W}\bar{G}(\hat{\theta}_n-\theta). \nonumber
+    0&=\hat{G}'(\hat{\beta}_n;\hat{e})\hat{W}\hat{g}(\hat{\beta}_n;\hat{e})= \\ &=\hat{G}'(\hat{\beta}_n;\hat{e})\hat{W}\hat{g}(\beta;\hat{e})+ \hat{G}'(\hat{\beta}_n;\hat{e})\hat{W}\hat{G}(\bar{\beta}_n;\hat{e})(\hat{\beta}_n-\beta)= \nonumber \\
+    &= \hat{G}'\hat{W}\hat{g}_1+ \hat{G}'\hat{W}\bar{G}(\hat{\beta}_n-\beta). \nonumber
     \end{align}
-For legibility, we abbreviated the notation for the various matrices from the second row. Here $\bar{\theta}$ is a vector of convex combinations of $\theta$ and $\hat{\theta}_n$, but this value can (and generally should) be different for different rows of $\hat{G}$. In this sense we abuse the notation for $\hat{G}$ somewhat when we say it is evaluated at $\bar{\theta}$. We also introduce
+For legibility, we abbreviated the notation for the various matrices from the second row. Here $\bar{\beta}_n$ is a vector of convex combinations of $\beta$ and $\hat{\beta}_n$, but this value can (and generally should) be different for different rows of $\hat{G}$. In this sense we abuse the notation for $\hat{G}$ somewhat when we say it is evaluated at $\bar{\beta}$. We also introduce
 \begin{align}
-\hat{g}_0=\hat{g}(\theta;\hat{E}[y|z]), \\
-g_0 = g(Y_i, X_i, \mathbf{Z}_i, M_i; \theta; E[y|z]).
+\hat{g}_1&=\hat{g}(\beta;\hat{e}), \\
+g_1 &= g(Y_i, X_i, Z_i, M_i; \beta; e).
 \end{align}
 
-Given Assumption \ref{ass_regulatory1}, we can prove that $\hat{\theta}_n$ consistently estimates $\theta$, as $||\hat{G}'\hat{W}\bar{G}||$ is going to be bounded and $\hat{g}_0 \rightarrow E[g_0]=0$ with probability approaching 1. This in turn yields
+Given Assumption \ref{ass_regulatory1}, we can prove that $\hat{\beta}_n$ consistently estimates $\beta$, as $||\hat{G}'\hat{W}\bar{G}||$ is going to be bounded and $\hat{g}_1 \rightarrow E[g_1]=0$ with probability approaching 1. This in turn yields
 \begin{align}
-    \hat{\theta}_n -\theta&=-(\hat{G}'\hat{W}\bar{G})^{-1} \hat{G}'\hat{W} \hat{g}_0 \\
-    &= -(G'WG)^{-1}G'W \hat{g}_0 + o_p(\hat{g}_0).\nonumber
+    \hat{\beta}_n -\beta&=-(\hat{G}'\hat{W}\bar{G})^{-1} \hat{G}'\hat{W} \hat{g}_1 \\
+    &= -(G'WG)^{-1}G'W \hat{g}_1 + o_p(\hat{g}_1).\nonumber
 \end{align}
 
-The following is a consequence of Theorem 7 of Ichimura and Newey (2015), and our calculations in the previous subsection.
+The following proposition .
 \begin{proposition}\label{prop_asympTheory}
-	Under Assumption \ref{ass_model}-\ref{ass_regulatory1}, if $||E[y|z](z_i, a,b)-\hat{E}[y|z](z_i, a,b)||=o_p(n^{-1/4}) \ Z_i-a.s.$ and for every $a,b$, then
+	Under Assumption \ref{ass_model}-\ref{ass_regulatory1}, if $\sup_{y,z}E|e(y, z,b)-\hat{e}(y,z,b)||=o_p(n^{-1/2})$, then
 	\[\sqrt{n}(\theta_n-\theta) \stackrel{d}{\rightarrow} N[0, (G'WG)^{-1}G'W \Omega W G (G'WG)^{-1}],
 	\]
-	with $\Omega= E[g_0'g_0]$.
+	with $\Omega= \lim E[\hat{g}_1'\hat{g}_1]$.
 \end{proposition}
-We also note that the fully observed GMM estimator has the same properties under our assumptions.
+We also note that the complete case GMM estimator has the analogous properties under our assumptions.
 
-\emph{Convergence rate of $\hat{E}[y|z]$ for the Nadaraya-Watson estimator}
-We are going to estimate the conditional expectation by a Nadaraya-Watson type estimator.
+\emph{Convergence rate of $\hat{e}(y,z,b)$ for the Nadaraya-Watson estimator}
+We are going to estimate the conditional expectation by a Nadaraya-Watson type estimator. For the sake of simplicity, we assume that all observables are continuously distributed. 
 \begin{align}
-    \hat{E}[y|z](y_i, z_i; a,b)= \frac{\sum_j K[H^{-1}(z_i-z_j)] h(a x_j + b z_i)}{\sum_j K[H^{-1}(z_i-z_j)]}.
+    \hat{e}(y_i, z_i; b)= \frac{\sum_j K[H^{-1}(\tilde{z}_i-\tilde{z}_j)] g_0(y_i, x_j z_i)}{\sum_j K[H^{-1}(\tilde{z}_i-\tilde{z}_j)]}.
 \end{align}
 For the sake of simplicity, we will assume that $H$ is a diagonal matrix with positive diagonal entries. Let us have the entry that decreases to zero at the slowest rate denoted by $h_{max}$, moreover let us write $\prod h_k= h$.
 
@@ -213,19 +210,57 @@ For the sake of simplicity, we will assume that $H$ is a diagonal matrix with po
         \item the conditional distribution function $f_{x|z}(x,z)$ is twice differentiable (with bounded Hessian)
     \end{enumerate}
 \end{assumption}
-Some of these assumptions are stronger than necessary (notably, conditions number 2 and number 4). We conclude that as long as the bandwidth $h_{max}$ is $o(n^{-1/4})$, we only have to worry about the contribution of the variances, under the restriction that the $\hat{E}[y|z]$ converges uniformly to the conditional expectation as a function, which gives the restriction that $nh \rightarrow \infty$. For these conditions we need that the $k<4$ that is involved in the calculations of the conditional expectations. In addition, we note that discrete $z_i$-s are allowed with simple modifications of the estimator and theory.
+Some of these assumptions are stronger than necessary (notably, conditions number 2 and number 4). We conclude that as long as the bandwidth $h_{max}$ is $o(n^{-1/4})$, we only have to worry about the contribution of the variances, under the restriction that the $\hat{e}$ converges uniformly to the conditional expectation as a function, which gives the restriction that $nh \rightarrow \infty$. For these conditions we need that the $\tilde{k}<4$ that is involved in the calculations of the conditional expectations. In addition, we note that discrete $z_i$-s are allowed with simple modifications of the estimator and theory.
 \begin{corollary}\label{cor_NWTheory}
-	If $\hat{E}[y|z]$ is the Nadaraya-Watson estimator with $k<4$, under Assumption \ref{ass_model}-\ref{ass_estimation} the imputation GMM estimator $\hat{\theta}_n$ is such that
-		\[\sqrt{n}(\theta_n-\theta) \stackrel{d}{\rightarrow} N[0, (G'WG)^{-1}G'W \Omega W G (G'WG)^{-1}],
+	If $\hat{e}$ is the Nadaraya-Watson estimator with $\tilde{k}<4$, under Assumption \ref{ass_model}-\ref{ass_estimation} the imputation GMM estimator $\hat{\beta}_n$ is such that
+		\[\sqrt{n}(\beta_n-\beta) \stackrel{d}{\rightarrow} N[0, (G'WG)^{-1}G'W \Omega W G (G'WG)^{-1}],
 	\]
-	with $\Omega= E[g_0'g_0]$. 
+	with $\Omega= E[\hat{g}_1'\hat{g}_1]$. 
 \end{corollary}
-The corollary suggests that the dimensionality of $\mathbf{Z}_i$ included in the is crucial for imputation to work. There are two reasons to include an (always observed) RHS variable into the imputation moments:
+The corollary suggests that the dimensionality of $Z_i$ included in the conditioning is crucial for imputation to work. There are two reasons to include an (always observed) RHS variable into the imputation moments:
 \begin{itemize}
 	\item Weakening of the missing-at-random assumption: we think the variable is related to missingness,
 	\item Predictive power for $X_i$: observing the variable gives information about the missing RHS variable
 \end{itemize}
-Even if the second point would not warrant an inclusion of a particular element of $\mathbf{Z}_i$ into the group of conditioning variables in $E[y|z]$, if we think that it may be related to missingness, it needs to be included in the estimator. 
+Even if the second point would not warrant an inclusion of a particular element of $Z_i$ into the group of conditioning variables in $\hat{e}$, if we think that it may be related to missingness, it needs to be included in the estimator.
+
+Next we are going to analyze our two examples and also show how with certain type of added imputation moment we can decrease the effective number of dimensions we need to condition on. This also connects this paper with the original strategy of Abrevaya and Donald (2017).
+
+\emph{Example 1: Probit with NLS}
+
+The imputation moment we add is equivalent to
+\begin{align}
+E\left[\begin{array}{c}
+M_i E[X_i|Z^1_i, Y_i](Y_i-E[\Phi(aX_i+Z_ic)|Z_i^1,Y_i])\\
+M_i E[Z_i^0|Z^1_i, Y_i](Y_i-E[\Phi(aX_i+Z_ic)|Z_i^1,Y_i]) \\
+M_i Z^1_i(Y_i-E[\Phi(aX_i+Z_ic)|Z_i^1,Y_i])
+\end{array}
+\right].
+\end{align}
+However, in order to preserve the simplicity of the approach, we only choose to focus on the moments that are additive in $X_i$ and $Y_i$. If a particular row of $g_0$ is such for some known $h_1,h_2$, then
+\begin{align}
+E&[M_i E[g_0(Y_i,X_i,Z_i,b)|Y_i,Z_i^1]]= \\
+&= E[M_iE[h_1(Y_i,Z_i)+h_2(X_i,Z_i)|Y_i,Z_i^1]]= \nonumber \\
+&= E[M_iE[E[h_1(Y_i,Z_i)+h_2(X_i,Z_i)|Y_i,Z_i]|Y_i,Z_i^1]]= \nonumber \\
+&= E[M_i h_1(Y_i,Z_i)] +E[M_i E[h_2(X_i,Z_i)|Y_i, Z_i^1]]= \nonumber \\
+&=E[M_i h_1(Y_i,Z_i)] +E[E[M_i E[h_2(X_i,Z_i)|Y_i, Z_i^1]|Z_i^1]]= \nonumber \\
+&=E[M_i h_1(Y_i,Z_i)] +E[E[M_i|Z_i^1] E[h_2(X_i,Z_i)|Z_i^1]]= \nonumber \\
+&=E[M_i h_1(Y_i,Z_i)] +E[P[M_i=1|Z_i]E[h_2(X_i,Z_i)|Z_i^1]]= \nonumber \\
+&= E[M_i h_1(Y_i,Z_i)] +E[M_i E[h_2(X_i,Z_i)|Z^1_i]]= 
+\end{align}
+due to the Law of Iterated Expectations and because
+\begin{align}
+E[E[ h_2(X_i,Z_i)|Y_i, Z_i^1]|M_i=1] = E[P[M_i=1]E[h_2(X_i,Z_i)|Y_i, Z_i^1, M_i=1] + \\
++P[M_i=0]E[h_2(X_i,Z_i)|Y_i, Z_i^1, M_i=0]|M_i=1] 
+\end{align}
+
+ conditional on $Z_i^1$, we have that missingness is independent of $X_i,Z_i^0$. The only unobserved variable we need to take the expectation over is $X_i$, since $Z_i$ and $Y_i$ is observed even if $M_i=1$.
+
+
+
+
+\emph{Example 2: Probit with Maximum Likelihood}
+
 
 \subsection{The role of the weighting matrix and efficiency}
 Our goal is to minimize the Mean Squared-Error (MSE). It can be calculated as the expected value of the diagonal of the matrix
