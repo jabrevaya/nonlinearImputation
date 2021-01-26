@@ -103,7 +103,7 @@ Next we define three GMM estimators:
 	\end{align}
 	with $e: \mathbb{R}^{k_1}\times B \rightarrow \mathbb{R}$
 	\begin{align}
-	e(y, z^1,b)= E[g_0(Y_i, X_i,Z_i, b)|Y_i=y, Z_i=z].
+	e(y, z^1,b)= E[g_0(Y_i, X_i,Z_i, b)|Y_i=y, Z_i^1=z^1].
 	\end{align}
 \end{enumerate}
 
@@ -138,7 +138,7 @@ In addition to the feasible identifying moments $\tilde{g}$ we also add imputati
     \hat{g}(b, \hat{e})&=n^{-1}\sum_{i=1}^n g(y_i,z_i,x_i,m_i; b; \hat{e})= \\
     &=n^{-1}\sum_{i=1}^n\left[\begin{array}{c}
         (1-m_i) g_0(y_i,z_i,x_i; b)  \\
-         m_i \hat{e}(y_i, z_i; b))
+         m_i \hat{e}(y_i, z_i^1; b))
     \end{array}\right], \nonumber
 \end{align}
 where $\hat{e}$ is an estimator of the conditional expectation $e$. At the end of this section we give the Nadaraya-Watson estimator as a specific example for a viable $\hat{e}$. The \textit{imputation GMM estimator} is minimizing
@@ -151,7 +151,7 @@ with respect to $b$, where the $\hat{W}$ is a symmetric weighting matrix such th
 \end{align}
 
 \subsection{Asymptotic properties}
-In the following arguments we closely follow Ichimura and Newey (2015) and Chernozhukov et al. (2018). We denote the imputation estimator as a random variable by $\hat{\beta}_n$, while the true value $\beta$. We also introduce the notation $\hat{G}(\beta;\hat{e})$ for the derivative of $\hat{g}$ with respect to the parameter vector. Correspondingly, the derivative of $E[g]$ is denoted by $G$.
+In the following arguments we closely follow Ichimura and Newey (2015) and Chernozhukov et al. (2018). We denote the imputation estimator as a random variable by $\hat{\beta}_n$, while the true value by $\beta$. We also introduce the notation $\hat{G}(\beta;\hat{e})$ for the derivative of $\hat{g}$ with respect to the parameter vector. Correspondingly, the derivative of $E[g]$ evaluated at $\beta$ is denoted by $G$.
 
 \begin{assumption}\label{ass_regulatory1}
 	We make several regulatory assumptions.
@@ -160,9 +160,9 @@ In the following arguments we closely follow Ichimura and Newey (2015) and Chern
 		\item $g_0$ is continuously differentiable with bounded derivatives,
 		\item random sampling,
 		\item $\beta \in B$, a compact set,
-		\item $G'WG$ is a.s. an invertible matrix.
-		\item $\hat{e}(y,z, b)\stackrel{p}{\rightarrow} e(y,z, b)$ uniformly,
-		\item $\sup_{y,z}\hat{e}(y,z, b)<\infty$ almost surely for all $b \in B$,
+		\item $G'WG$ is invertible a.s.,
+		\item $\hat{e}(y,z^1, b)\stackrel{p}{\rightarrow} e(y,z^1, b)$ uniformly,
+		\item $\sup_{y,z^1}\hat{e}(y,z^1, b)<\infty$ almost surely for all $b \in B$,
 	\end{itemize}
 \end{assumption}
 
@@ -171,31 +171,31 @@ Writing up the first order Taylor expansion of $\hat{g}$ around $\beta$ gives
     0&=\hat{G}'(\hat{\beta}_n;\hat{e})\hat{W}\hat{g}(\hat{\beta}_n;\hat{e})= \\ &=\hat{G}'(\hat{\beta}_n;\hat{e})\hat{W}\hat{g}(\beta;\hat{e})+ \hat{G}'(\hat{\beta}_n;\hat{e})\hat{W}\hat{G}(\bar{\beta}_n;\hat{e})(\hat{\beta}_n-\beta)= \nonumber \\
     &= \hat{G}'\hat{W}\hat{g}_1+ \hat{G}'\hat{W}\bar{G}(\hat{\beta}_n-\beta). \nonumber
     \end{align}
-For legibility, we abbreviated the notation for the various matrices from the second row. Here $\bar{\beta}_n$ is a vector of convex combinations of $\beta$ and $\hat{\beta}_n$, but this value can (and generally should) be different for different rows of $\hat{G}$. In this sense we abuse the notation for $\hat{G}$ somewhat when we say it is evaluated at $\bar{\beta}$. We also introduce
+We abbreviated the notation for the various matrices from the second row. Here $\bar{\beta}_n$ is a vector of convex combinations of $\beta$ and $\hat{\beta}_n$, but this value can (and generally should) be different for different rows of $\hat{G}$. In this sense we abuse the notation for $\hat{G}$ somewhat when we say it is evaluated at $\bar{\beta}$. We also introduce
 \begin{align}
 \hat{g}_1&=\hat{g}(\beta;\hat{e}), \\
 g_1 &= g(Y_i, X_i, Z_i, M_i; \beta; e).
 \end{align}
 
-Given Assumption \ref{ass_regulatory1}, we can prove that $\hat{\beta}_n$ consistently estimates $\beta$, as $||\hat{G}'\hat{W}\bar{G}||$ is going to be bounded and $\hat{g}_1 \rightarrow E[g_1]=0$ with probability approaching 1. This in turn yields
+Given Assumption \ref{ass_regulatory1}, we can prove that $\hat{\beta}_n$ consistently estimates $\beta$, as $||\hat{G}'\hat{W}\bar{G}||$ is bounded and $\hat{g}_1 \rightarrow E[g_1]=0$ with probability approaching 1. This in turn yields
 \begin{align}
     \hat{\beta}_n -\beta&=-(\hat{G}'\hat{W}\bar{G})^{-1} \hat{G}'\hat{W} \hat{g}_1 \\
     &= -(G'WG)^{-1}G'W \hat{g}_1 + o_p(\hat{g}_1).\nonumber
 \end{align}
 
-The following proposition .
+The following proposition describes the asymptotic properties of the imputation GMM estimator.
 \begin{proposition}\label{prop_asympTheory}
-	Under Assumption \ref{ass_model}-\ref{ass_regulatory1}, if $\sup_{y,z}E|e(y, z,b)-\hat{e}(y,z,b)||=o_p(n^{-1/2})$, then
-	\[\sqrt{n}(\theta_n-\theta) \stackrel{d}{\rightarrow} N[0, (G'WG)^{-1}G'W \Omega W G (G'WG)^{-1}],
+	Under Assumptions \ref{ass_model}-\ref{ass_regulatory1}, if $\sup_{y,z}E|e(y, z,b)-\hat{e}(y,z,b)||=o_p(n^{-1/2})$, then
+	\[\sqrt{n}(\beta_n-\beta) \stackrel{d}{\rightarrow} N[0, (G'WG)^{-1}G'W \Omega W G (G'WG)^{-1}],
 	\]
 	with $\Omega= \lim E[\hat{g}_1'\hat{g}_1]$.
 \end{proposition}
 We also note that the complete case GMM estimator has the analogous properties under our assumptions.
 
-\emph{Convergence rate of $\hat{e}(y,z,b)$ for the Nadaraya-Watson estimator}
-We are going to estimate the conditional expectation by a Nadaraya-Watson type estimator. For the sake of simplicity, we assume that all observables are continuously distributed. 
+\emph{Convergence rate of $\hat{e}(y,z^1,b)$ for the Nadaraya-Watson estimator.}
+We estimate the conditional expectation by a Nadaraya-Watson type estimator. For the sake of simplicity, we assume that all observables are continuously distributed, and we also denote $\tilde{Z}_i = Y_i, Z_i^1$. We explore the case when the LHS variable is discrete, which makes the estimation of the conditional expectation nuisance parameter less complicated. 
 \begin{align}
-    \hat{e}(y_i, z_i; b)= \frac{\sum_j K[H^{-1}(\tilde{z}_i-\tilde{z}_j)] g_0(y_i, x_j z_i)}{\sum_j K[H^{-1}(\tilde{z}_i-\tilde{z}_j)]}.
+    \hat{e}(y_i, z_i^1; b)= \frac{\sum_j K[H^{-1}(\tilde{z}_i-\tilde{z}_j)] g_0(y_i, x_j, (z_j^0, z_i^1), b)}{\sum_j K[H^{-1}(\tilde{z}_i-\tilde{z}_j)]}.
 \end{align}
 For the sake of simplicity, we will assume that $H$ is a diagonal matrix with positive diagonal entries. Let us have the entry that decreases to zero at the slowest rate denoted by $h_{max}$, moreover let us write $\prod h_k= h$.
 
@@ -205,17 +205,17 @@ For the sake of simplicity, we will assume that $H$ is a diagonal matrix with po
         \item $h_{max}\rightarrow 0$
         \item $nh_{max}^{k_z}\rightarrow \infty$
         \item $K$ is a Parzen-Rosenblatt kernel (second order)
-        \item $Supp(Z_i)$ is compact, with the strong pdf assumption
+        \item $Supp(\tilde{Z}_i)$ is compact, with the strong pdf assumption
         \item the pdf for $Z_i$ is twice differentiable
-        \item the conditional distribution function $f_{x|z}(x,z)$ is twice differentiable (with bounded Hessian)
+        \item the conditional distribution function $f_{x, z^0|z^1, y}(x, y,z)$ is twice differentiable with bounded Hessian
     \end{enumerate}
 \end{assumption}
-Some of these assumptions are stronger than necessary (notably, conditions number 2 and number 4). We conclude that as long as the bandwidth $h_{max}$ is $o(n^{-1/4})$, we only have to worry about the contribution of the variances, under the restriction that the $\hat{e}$ converges uniformly to the conditional expectation as a function, which gives the restriction that $nh \rightarrow \infty$. For these conditions we need that the $\tilde{k}<4$ that is involved in the calculations of the conditional expectations. In addition, we note that discrete $z_i$-s are allowed with simple modifications of the estimator and theory.
+Some of these assumptions are stronger than necessary (notably, conditions number 4 and 6). We conclude that as long as the bandwidth $h_{max}$ is $o(n^{-1/4})$, we only have to worry about the contribution of the variances, under the restriction that the $\hat{e}$ converges uniformly to the conditional expectation as a function, which gives the condition that $nh \rightarrow \infty$. This implies that we need that the $k_1<3$ that is involved in the calculations of the conditional expectations. In addition, we note that discrete $\tilde{Z}_i$-s are allowed with simple modifications of the estimator and theory.
 \begin{corollary}\label{cor_NWTheory}
-	If $\hat{e}$ is the Nadaraya-Watson estimator with $\tilde{k}<4$, under Assumption \ref{ass_model}-\ref{ass_estimation} the imputation GMM estimator $\hat{\beta}_n$ is such that
+	If $\hat{e}$ is the Nadaraya-Watson estimator with $k_1<3$, under Assumption \ref{ass_model}-\ref{ass_estimation} the imputation GMM estimator $\hat{\beta}_n$ is such that
 		\[\sqrt{n}(\beta_n-\beta) \stackrel{d}{\rightarrow} N[0, (G'WG)^{-1}G'W \Omega W G (G'WG)^{-1}],
-	\]
-	with $\Omega= E[\hat{g}_1'\hat{g}_1]$. 
+		\]
+	with $\Omega= \lim E[\hat{g}_1'\hat{g}_1]$. 
 \end{corollary}
 The corollary suggests that the dimensionality of $Z_i$ included in the conditioning is crucial for imputation to work. There are two reasons to include an (always observed) RHS variable into the imputation moments:
 \begin{itemize}
@@ -226,9 +226,23 @@ Even if the second point would not warrant an inclusion of a particular element 
 
 Next we are going to analyze our two examples and also show how with certain type of added imputation moment we can decrease the effective number of dimensions we need to condition on. This also connects this paper with the original strategy of Abrevaya and Donald (2017).
 
-\emph{Example 1: Probit with NLS}
+\subsection{Moments additive in $X_i$ and $Y_i$}
+In order to preserve the simplicity of the approach of Abrevaya and Donald (2017), we  may only want to focus on the moments that are additive in $X_i$ and $Y_i$. If a particular row of $g_0$ is such for some known $h_1,h_2$ functions, then
+\begin{align}
+E&[M_i E[g_0(Y_i,X_i,Z_i,b)|Y_i,Z_i^1]]= \\
+&= E[M_iE[h_1(Y_i,Z_i)+h_2(X_i,Z_i)|Y_i,Z_i^1]]= \nonumber \\
+&= E[M_iE[E[h_1(Y_i,Z_i)+h_2(X_i,Z_i)|Y_i,Z_i]|Y_i,Z_i^1]]= \nonumber \\
+&= E[M_i h_1(Y_i,Z_i)] +E[M_i E[h_2(X_i,Z_i)|Y_i, Z_i^1]]= \nonumber \\
+&=E[M_i h_1(Y_i,Z_i)] +E[E[M_i E[h_2(X_i,Z_i)|Y_i, Z_i^1]|Z_i^1]]= \nonumber \\
+&=E[M_i h_1(Y_i,Z_i)] +E[E[M_i|Z_i^1] E[h_2(X_i,Z_i)|Z_i^1]]= \nonumber \\
+&=E[M_i h_1(Y_i,Z_i)] +E[P[M_i=1|Z_i^1]E[h_2(X_i,Z_i)|Z_i^1]]= \nonumber \\
+&= E[M_i h_1(Y_i,Z_i)] +E[M_i E[h_2(X_i,Z_i)|Z^1_i]]= \nonumber \\
+&= E\left[M_i (h_1(Y_i,Z_i) + E[h_2(X_i,Z_i)|Z^1_i])\right] \nonumber
+\end{align}
+due to the Law of Iterated Expectations and because conditional on $Z_i^1$, we have that missingness is independent of $X_i,Z_i^0$ and $Y_i$. If we use additive moments, we only need to estimate the conditional expectation of the component that contains the missing variable $X_i$ conditional on $Z_i^1$, excluding $Y_i$ - thereby decreasing the noise we introduce due to imputation. The conditional expectation may converge for higher dimension of $Z_i^1$ in this case ($k_1<4$).
 
-The imputation moment we add is equivalent to
+\emph{Example 1: Probit with NLS}
+The imputation moments we add are
 \begin{align}
 E\left[\begin{array}{c}
 M_i E[X_i|Z^1_i, Y_i](Y_i-E[\Phi(aX_i+Z_ic)|Z_i^1,Y_i])\\
@@ -237,70 +251,62 @@ M_i Z^1_i(Y_i-E[\Phi(aX_i+Z_ic)|Z_i^1,Y_i])
 \end{array}
 \right].
 \end{align}
-However, in order to preserve the simplicity of the approach, we only choose to focus on the moments that are additive in $X_i$ and $Y_i$. If a particular row of $g_0$ is such for some known $h_1,h_2$, then
+As argued above, for the additive elements of this vector we may use the identical moments
 \begin{align}
-E&[M_i E[g_0(Y_i,X_i,Z_i,b)|Y_i,Z_i^1]]= \\
-&= E[M_iE[h_1(Y_i,Z_i)+h_2(X_i,Z_i)|Y_i,Z_i^1]]= \nonumber \\
-&= E[M_iE[E[h_1(Y_i,Z_i)+h_2(X_i,Z_i)|Y_i,Z_i]|Y_i,Z_i^1]]= \nonumber \\
-&= E[M_i h_1(Y_i,Z_i)] +E[M_i E[h_2(X_i,Z_i)|Y_i, Z_i^1]]= \nonumber \\
-&=E[M_i h_1(Y_i,Z_i)] +E[E[M_i E[h_2(X_i,Z_i)|Y_i, Z_i^1]|Z_i^1]]= \nonumber \\
-&=E[M_i h_1(Y_i,Z_i)] +E[E[M_i|Z_i^1] E[h_2(X_i,Z_i)|Z_i^1]]= \nonumber \\
-&=E[M_i h_1(Y_i,Z_i)] +E[P[M_i=1|Z_i]E[h_2(X_i,Z_i)|Z_i^1]]= \nonumber \\
-&= E[M_i h_1(Y_i,Z_i)] +E[M_i E[h_2(X_i,Z_i)|Z^1_i]]= 
+E\left[\begin{array}{c}
+M_i E[X_i|Z^1_i, Y_i](Y_i-E[\Phi(aX_i+Z_ic)|Z_i^1])\\
+M_i Z_i^0(Y_i-E[\Phi(aX_i+Z_ic)|Z_i^1]) \\
+M_i Z^1_i(Y_i-E[\Phi(aX_i+Z_ic)|Z_i^1])
+\end{array}
+\right],
 \end{align}
-due to the Law of Iterated Expectations and because
-\begin{align}
-E[E[ h_2(X_i,Z_i)|Y_i, Z_i^1]|M_i=1] = E[P[M_i=1]E[h_2(X_i,Z_i)|Y_i, Z_i^1, M_i=1] + \\
-+P[M_i=0]E[h_2(X_i,Z_i)|Y_i, Z_i^1, M_i=0]|M_i=1] 
-\end{align}
-
- conditional on $Z_i^1$, we have that missingness is independent of $X_i,Z_i^0$. The only unobserved variable we need to take the expectation over is $X_i$, since $Z_i$ and $Y_i$ is observed even if $M_i=1$.
-
-
-
+which are more simple to estimate. Abrevaya and Donald (2017) only uses the additive moments in the case when the conditional expectation is further parametrized to ensure it can be estimated $\sqrt{n}$-consistently. To preserve the appealing simplicity of their approach, we will also restrict our attention to these moments in the continuation of the example.
 
 \emph{Example 2: Probit with Maximum Likelihood}
-
+This moment is not additive, so we add the popuLation moments
+\begin{align*}
+E\left[\left.\begin{array}{c}
+M_i X_i\left(Y_i \frac{\phi(aX_i+Z_ic)}{\Phi(aX_i+Z_ic)} - (1-Y_i)\frac{\phi(aX_i+Z_ic)}{1-\Phi(aX_i+Z_ic)}\right) \\
+M_i Z_i\left(Y_i \frac{\phi(aX_i+Z_ic)}{\Phi(aX_i+Z_ic)} - (1-Y_i)\frac{\phi(aX_i+Z_ic)}{1-\Phi(aX_i+Z_ic)}\right)
+\end{array}
+\right| \begin{array}{c} Z_i^1 \\ Y_i \end{array}\right].
+\end{align*}
+Even though we chose the MLE moments to utilize the data points that are completely observed, we can still add the additive moments only from the previous example as imputation moments if we so wish.
 
 \subsection{The role of the weighting matrix and efficiency}
 Our goal is to minimize the Mean Squared-Error (MSE). It can be calculated as the expected value of the diagonal of the matrix
 \begin{align}
-(\hat{\theta}_n &-\theta)(\hat{\theta}_n -\theta)' \\
-&=((G'WG)^{-1}G'W \hat{g}_0 + o_p(\hat{g}_0))((G'WG)^{-1}G'W \hat{g}_0 + o_p(\hat{g}_0))'= \nonumber \\
-&= (G'WG)^{-1} G'W \hat{\Omega}_0 W G (G'WG)^{-1}  + o_p(\hat{g}_0\hat{g}_0'). \nonumber
+(\hat{\beta}_n &-\beta)(\hat{\beta}_n -\beta)' \\
+&=((\hat{G}'\hat{W}\hat{G})^{-1}\hat{G}'\hat{W}\hat{g}_1)((\hat{G}'\hat{W}\hat{G})^{-1}\hat{G}'\hat{W}\hat{g}_1)'= \nonumber \\
+&= (\hat{G}'\hat{W}\hat{G})^{-1} \hat{G}'\hat{W} \hat{\Omega}_0 \hat{W} \hat{G} (\hat{G}'\hat{W}\hat{G})^{-1}. \nonumber
 \end{align}
 
 Now let us set
-\[W^{-1}=\hat{\Omega}_0=n^{-1}\sum_i g(y_i,z_i,x_i,m_i; \alpha,\beta; \hat{E}[y|z]) g(y_i,z_i,x_i,m_i; \alpha,\beta; \hat{E}[y|z])',
+\[\hat{W}^{-1}=\hat{\Omega}_0,
 \]
 then we get that
 \begin{align}
-diag&\left((\hat{\theta}_n -\theta)(\hat{\theta}_n -\theta)'\right)= diag\left((G'\hat{\Omega} G)^{-1} + o_p(\hat{\Omega}^{-1})\right).
+(\hat{\beta}_n -\beta)(\hat{\beta}_n -\beta)'= \left(\hat{G}'\hat{\Omega}_0 \hat{G}\right)^{-1}.
 \end{align}
 We note that
 \begin{align*}
-diag\left((G'WG)^{-1} G'W \hat{\Omega}W G (G'WG)^{-1}-  (G'\hat{\Omega} G)^{-1}\right) + o_p(\hat{g}_0\hat{g}_0')> 0 \ ev.,
+diag\left((\hat{G}'\hat{W}\hat{G})^{-1} \hat{G}'\hat{W} \hat{\Omega}_0 \hat{W} \hat{G} (\hat{G}'\hat{W}\hat{G})^{-1}-  (\hat{G}'\hat{\Omega}_0 \hat{G})^{-1}\right)\geq 0 \ ev.,
 \end{align*}
-which means this is the infeasible optimal weighting for large samples. This optimal weighting matrix can be estimated by the inverse of $(g\hat{g}')$, which is a block-diagonal matrix.
+which means this is the infeasible optimal weighting for large samples. This optimal weighting matrix can be estimated by the inverse of $n^{-1}\sum g g'$, which is a block-diagonal matrix.
 \begin{align}
 \hat{\Omega} = \left[\begin{array}{cc}
 \hat{\tilde{\Omega}} & 0 \\ 0 & \hat{B}
 \end{array}\right].
 \end{align}
-The block matrix corresponding to the imputation moments ($\hat{B}$) is positive definite if the additional moments do not have a zero optimal weight as $n$ tends to infinity. In this case $diag(G\hat{W}G)^{-1}$ is smaller or equal than the diagonal of the optimal covariance matrix of the estimator that does not contain the added moments (which is $(\tilde{G}'^{-1}\hat{\tilde{\Omega}} \tilde{G})$).
-\begin{assumption}\label{ass_optimalWeighting}
-	$\hat{W} = \hat{\Omega}^{-1}.$
-\end{assumption}
+The block matrix $\hat{\tilde{\Omega}}$ is the estimate for the inverse of the optimal weighting matrix for the complete case GMM estimator. The block matrix corresponding to the imputation moments ($\hat{B}$) is positive definite if the additional moments do not have a zero optimal weight as $n$ tends to infinity. In this case $diag(G\hat{W}G)^{-1}$ is smaller or equal than the diagonal of the optimal covariance matrix of the estimator that does not contain the added moments (which is $(\tilde{G}'^{-1}\hat{\tilde{\Omega}} \tilde{G})$).
 \begin{proposition}
-	Under Assumption \ref{ass_model}-\ref{ass_regulatory1} and \ref{ass_optimalWeighting}, $MSE(\hat{\theta}_n)\leq MSE(\tilde{\theta}_n) \ ev.$ for any admissible weighting of the $\tilde{\theta}_n$ estimator. The inequality is strict for the $\beta$-coefficients corresponding to the fully observed variables ($z_i$).
+	Under Assumption \ref{ass_model}-\ref{ass_regulatory1} and if $\hat{B}/||\hat{\Omega}||$ is bounded eventually, $MSE(\hat{\beta}_n)\leq MSE(\tilde{\beta}_n) \ ev.$ for any admissible weighting of the $\tilde{\beta}_n$ estimator. The inequality is strict for at least one element of $\beta$.
 \end{proposition}
+The proposition states that in large samples the imputation estimator will always increase efficiency, if the optimal weighting matrix calculated as prescribed above does not exclude these moments as $n\rightarrow \infty$. This can happen only if the $Z_i^1$ has too high dimensions (so we do not have $\sqrt{n}$-consistency in general) or if the $X_i$ is independent of the observables that are always observed.
 
 \begin{remark}
-	Under our assumptions, the relative optimal weight for the $q$th and $r$th element of $\hat{g}$ (denoted by superscripts) has the same order as
-	\[\frac{L_2(\hat{g}_0^q-g_0^q)}{L_2(\hat{g}_0^r-g_0^r)}.
-	\]
-	So if an element of $\hat{g}_0$ does not converge with a $\sqrt{n}$ rate to zero due to the estimates nuisance parameter, its relative weight is set to be arbitrarily close to zero, eventually. The optimal weighting matrix selects the moments automatically so that the estimator is always root-n consistent with an asymptotic variance-covariance matrix that is the same as for the fully observed GMM estimator.\\
-	However, this inference introduces additional noise and loss of degrees of freedom in finite samples, so if the applied researcher implements the imputation method for $k\geq 4$, imputation will \textit{increase} standard errors. 
+	Under our assumptions, if an element of $\hat{g}$ does not converge with a $\sqrt{n}$ rate to zero due to the estimates nuisance parameter, its relative weight is set to be arbitrarily close to zero, eventually. The optimal weighting matrix selects the moments automatically so that the estimator is always $\sqrt{n}$-consistent with an asymptotic variance-covariance matrix that is the same as for the complete case GMM estimator.\\
+	However, this inference introduces additional noise and loss of degrees of freedom in finite samples, so if the applied researcher implements the imputation method for $k^1\geq 4$, imputation will slightly \textit{increase} standard errors in finite samples. 
 \end{remark}
 
 \begin{remark}
