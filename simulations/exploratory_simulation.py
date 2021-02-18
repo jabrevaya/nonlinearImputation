@@ -38,15 +38,15 @@ nlist = [100, 200]
 
 # File names (fname is req'd, stores the aggregate results, resultsFname
 # can be set to False)
-fname = 'OracleVsNW.txt'
-resultsFname = 'OracleVsNWRes'
+fname = 'OracleVsNWzz.txt'
+resultsFname = 'OracleVsNWReszz'
 
 # Random seed (not implemented), noisiness (should be True only for dev)
 seed = 2433523
 noise = False
 
 # Fineness of grid; bwidth is locked in with a 1/3 rate
-gridno = 1000
+gridno = 100
 
 
 #################
