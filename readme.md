@@ -9,6 +9,36 @@ directory. The LaTeX write-ups with pdf-s are in the "latexfiles" library. For
 reproducibility, a Singularity container with a version of Ubuntu and python3
 where the code runs securely is available at TBA.
 
+## Visions and AIs - 02/24/2022
+
+* Jason: the linear model can be extended.
+*  * Show that we get efficiency gains
+*  * get the proofs done (model is fine)
+*  * Calculate asymptotic variance in simple cases
+*  * deciding the set of sims
+*   * * simulations for the linear case
+
+* Jiangang: 
+* 1. model (general) ok
+* 2. ok with estimators
+* 3. ok with NW
+* 4. 
+* 5. Proofs: higher order kernel in estimation as question
+
+intercept, one z and an x, it is a double-linear model (y~x,z; x~z, x is MAR, 50%)
+
+
+AIs
+[P] : review proof from Jiangang
+[Ji] : simulations linear model, comparing AD directly with nonparametric
+[P] : upload papers cited, make folders
+[Ji] : uploads Wooldridge paper + latex he wrote wqith proofs
+[P] : edit proofs, take stock whats missing
+[Jason] : Intro, literature review?
+
+Next meeting: [P] circle back for 03/17 Thursday
+
+
 ## Estimators
 
 (A1) Given y,(x,z) LHS and set of RHS variables, m missingness indicator that is
@@ -107,6 +137,7 @@ sample gmms)
 questionable in the end
 
 ### TODO?
+- Maybe the linear case as DGP and compare AD 2017 with nonparametric
 - "complete case GMM"; tilde missing at (11), hats in (17)
 - PETER: theory finish (define the estimator that only uses fully observed observations, write down proofs better, clean up)  NO PROOFS!!!
 - JASON: lit review, introduction
